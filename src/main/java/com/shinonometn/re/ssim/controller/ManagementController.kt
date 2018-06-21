@@ -6,9 +6,7 @@ import com.shinonometn.re.ssim.services.LingnanCourseService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.stereotype.Controller
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.ResponseBody
+import org.springframework.web.bind.annotation.*
 
 @Controller
 @RequestMapping("/api/mng")
@@ -22,9 +20,23 @@ class ManagementController(@Autowired private val lingnanCourseService: LingnanC
     @ResponseBody
     fun termListRefresh(): MutableMap<String, String>? = lingnanCourseService.reloadAndGetTermList()
 
-    @GetMapping("/task")
-    @ResponseBody
-    fun taskList() : MutableIterable<CaptureTask>? {
+//    @GetMapping("/task")
+//    @ResponseBody
+//    fun taskList() : MutableIterable<CaptureTask>? {
+//
+//    }
 
-    }
+    @PostMapping("/tasks")
+    @ResponseBody
+    fun createTask(@RequestParam("termCode") termCode : String) =
+            HashMap<String,Any>().apply {
+                if(!lingnanCourseService.termList!!.containsKey(termCode)){
+                    this["message"] = "unknown_term_code"
+                    this["error"] = "task_create_failed"
+                } else {
+                    this["message"] = "success"
+                    this["data"] = lingnanCourseService.createTask(termCode)
+                }
+            }
+
 }

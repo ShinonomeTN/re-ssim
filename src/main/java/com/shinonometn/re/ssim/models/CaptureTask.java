@@ -1,22 +1,24 @@
 package com.shinonometn.re.ssim.models;
 
-import org.bson.types.ObjectId;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.Date;
 
 @Document
 public class CaptureTask {
-    private ObjectId id;
+    private String id;
     private String termCode;
-    private String status;
+    private String termName;
+    private TaskStatus status;
     private Date createDate;
 
-    public ObjectId getId() {
+    @Id
+    public String getId() {
         return id;
     }
 
-    public void setId(ObjectId id) {
+    public void setId(String id) {
         this.id = id;
     }
 
@@ -28,11 +30,19 @@ public class CaptureTask {
         this.termCode = termCode;
     }
 
-    public String getStatus() {
+    public String getTermName() {
+        return termName;
+    }
+
+    public void setTermName(String termName) {
+        this.termName = termName;
+    }
+
+    public TaskStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(TaskStatus status) {
         this.status = status;
     }
 

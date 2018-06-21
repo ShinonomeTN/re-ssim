@@ -5,12 +5,16 @@ import com.shinonometn.re.ssim.caterpillar.kingo.KingoUrls;
 import com.shinonometn.re.ssim.caterpillar.kingo.capture.TermListPageProcessor;
 import com.shinonometn.re.ssim.commons.CacheKeys;
 import com.shinonometn.re.ssim.models.CaptureTask;
+import com.shinonometn.re.ssim.models.CaptureTaskDTO;
+import com.shinonometn.re.ssim.models.TaskStatus;
 import com.shinonometn.re.ssim.repository.CaptureTaskRepository;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import us.codecraft.webmagic.Site;
 import us.codecraft.webmagic.Spider;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -73,8 +77,25 @@ public class LingnanCourseService {
         return getTermList();
     }
 
-
-    public List<CaptureTask> captureTasks() {
+    public List<CaptureTaskDTO> listTasks(){
 
     }
+
+    /**
+     *
+     * Create a term capture task with code
+     *
+     * @param termCode term code
+     * @return created task
+     */
+    public CaptureTask createTask(@NotNull String termCode) {
+        CaptureTask captureTask = new CaptureTask();
+        captureTask.setCreateDate(new Date());
+        captureTask.setStatus(TaskStatus.created);
+        captureTask.setTermCode(termCode);
+        captureTask.setTermName(getTermList().get(termCode));
+
+        return captureTaskRepository.save(captureTask);
+    }
+
 }
