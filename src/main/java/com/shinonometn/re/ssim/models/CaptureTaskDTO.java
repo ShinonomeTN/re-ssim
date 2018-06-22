@@ -1,4 +1,19 @@
 package com.shinonometn.re.ssim.models;
 
-public class CaptureTaskDTO {
+import com.shinonometn.re.ssim.caterpillar.SpiderStatus;
+
+import org.springframework.beans.factory.annotation.Value;
+
+import java.util.Date;
+
+public interface CaptureTaskDTO{
+
+    String getId();
+    String getTermCode();
+    String getTermName();
+    TaskStatus getTaskStatus();
+    Date getCreateDate();
+
+    @Value("#{@lingnanCourseService.getStatusByTask(target)}")
+    SpiderStatus getSpiderStatus();
 }

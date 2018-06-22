@@ -47,23 +47,4 @@ public class CoursesListPageProcessor implements PageProcessor {
     public Site getSite() {
         return site;
     }
-
-    public static void main(String[] args) {
-
-        final String subjectQueryPath = "http://jwgl.lnc.edu.cn/ZNPK/Private/List_XNXQKC.aspx?xnxq=";
-        final String classInfoQueryPath = "http://jwgl.lnc.edu.cn/ZNPK/KBFB_LessonSel.aspx";
-
-        Site site = Site.me()
-                .setRetryTimes(10)
-                .setSleepTime(500)
-                .setTimeOut(10000)
-                .addHeader("Referer", classInfoQueryPath)
-                .setCharset("GBK")
-                .setUserAgent("Windows 3.1/DOS IE5");
-
-        Spider.create(new CoursesListPageProcessor(site))
-                .addUrl(subjectQueryPath + "20171")
-                .run();
-
-    }
 }

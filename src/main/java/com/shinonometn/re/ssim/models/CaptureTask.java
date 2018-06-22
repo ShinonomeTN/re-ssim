@@ -10,8 +10,8 @@ public class CaptureTask {
     private String id;
     private String termCode;
     private String termName;
-    private TaskStatus status;
     private Date createDate;
+    private Boolean finished = false;
 
     @Id
     public String getId() {
@@ -38,19 +38,19 @@ public class CaptureTask {
         this.termName = termName;
     }
 
-    public TaskStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(TaskStatus status) {
-        this.status = status;
-    }
-
     public Date getCreateDate() {
         return createDate;
     }
 
     public void setCreateDate(Date createDate) {
         this.createDate = createDate;
+    }
+
+    public Boolean getFinished() {
+        return finished;
+    }
+
+    public void setFinished(Boolean finished) {
+        this.finished = finished;
     }
 }
