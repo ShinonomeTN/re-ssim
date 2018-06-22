@@ -15,9 +15,15 @@ public class LoginExecutePageProcessor implements PageProcessor {
 
     @Override
     public void process(Page page) {
-        Element element = page.getHtml().getDocument().getElementById("divLogNote").child(0);
-        String reg = ".*加载权限数据.*";
-        page.putField("loginResult", element.text().matches(reg));
+        Element element = page.getHtml().getDocument().getElementById("divLogNote");
+
+        if(element != null){
+            element = element.child(0);
+            String reg = ".*加载权限数据.*";
+            page.putField("loginResult", element.text().matches(reg));
+        }else{
+            page.putField("loginResult", false);
+        }
 
     }
 

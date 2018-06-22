@@ -57,7 +57,7 @@ public class LingnanCourseService {
 
         // Setup
         this.site.setUserAgent(caterpillarProperties.getProperty("user.agent"))
-                .setCharset("encoding");
+                .setCharset(caterpillarProperties.getProperty("encoding"));
 
     }
 
@@ -104,7 +104,7 @@ public class LingnanCourseService {
      * @return task list
      */
     public List<CaptureTaskDTO> listTasks() {
-        return captureTaskRepository.findAllDTO();
+        return captureTaskRepository.findAllProjectedBy();
     }
 
     /**
@@ -135,7 +135,7 @@ public class LingnanCourseService {
         SpiderStatus spiderStatus = spiderMonitor.getSpiderStatus().get(taskId);
         spiderStatus.stop();
 
-        return captureTaskRepository.findOneDtoById(taskId);
+        return captureTaskRepository.findProjectedById(taskId);
     }
 
     /**
@@ -150,14 +150,13 @@ public class LingnanCourseService {
         Optional<CaptureTask> captureTaskResult = captureTaskRepository.findById(taskId);
         if (!captureTaskResult.isPresent()) return null;
 
-        CaptureTaskDTO dto = captureTaskRepository.findOneDtoById(taskId);
+        CaptureTaskDTO dto = captureTaskRepository.findProjectedById(taskId);
 
-        if (dto.getSpiderStatus() != null || dto.getSpiderStatus().getStatus().equals("Running"))
+        if (dto.getSpiderStatus() != null && dto.getSpiderStatus().getStatus().equals("Running"))
             throw new IllegalStateException("task_is_running");
 
-        if (doesntLogin()) {
-            doLogin();
-            if (doesntLogin()) throw new IllegalStateException("login_to_kingo_failed");
+        if (notLogin() && !doLogin()) {
+            throw new IllegalStateException("login_to_kingo_failed");
         }
 
         File tempFolder = getTempDir(taskId);
@@ -170,9 +169,11 @@ public class LingnanCourseService {
                     } catch (Exception ignore) {
 
                     }
-                });
+                })
+                .setUUID(taskId)
+                .thread(Integer.parseInt(caterpillarProperties.getProperty("threads")));
 
-        spider.startRequest(fetchTermList(taskId).stream()
+        spider.startRequest(fetchTermList(captureTaskResult.get().getTermCode()).stream()
                 .map(id -> createSubjectRequest(captureTaskResult.get().getTermCode(), id))
                 .collect(Collectors.toList()));
 
@@ -203,7 +204,7 @@ public class LingnanCourseService {
         Map<String, String> termList = new HashMap<>();
 
         Spider.create(new CoursesListPageProcessor(site))
-                .addUrl(KingoUrls.subjectQueryPath + termCode)
+                .addUrl(KingoUrls.subjectListQueryPath + termCode)
                 .addPipeline((resultItems, task) -> termList.putAll(resultItems.get("courses")))
                 .run();
 
@@ -218,7 +219,7 @@ public class LingnanCourseService {
         return file;
     }
 
-    private boolean doesntLogin() {
+    private boolean notLogin() {
         synchronized (site) {
             AtomicBoolean isLogin = new AtomicBoolean(false);
 
@@ -233,7 +234,7 @@ public class LingnanCourseService {
         }
     }
 
-    private void doLogin() {
+    private boolean doLogin() {
         String username = caterpillarProperties.getProperty("username");
         String password = caterpillarProperties.getProperty("password");
         String role = caterpillarProperties.getProperty("role");
@@ -245,25 +246,38 @@ public class LingnanCourseService {
                 .addPipeline((r, t) -> items.putAll(r.getAll()))
                 .run();
 
+        AtomicBoolean loginResult = new AtomicBoolean(false);
+
         if ((Boolean) items.get("ready")) {
+
+            if(items.get("cookies") != null){
+                Map<String, String> cookies = ((List<String>) items.get("cookies"))
+                        .stream()
+                        .flatMap(s -> Stream.of(s.split(";")))
+                        .flatMap(s -> Stream.of(new String[][]{s.split("=")}))
+                        .collect(Collectors.toMap(ss -> ss[0], ss -> ss[1]));
+
+                this.site.addCookie("ASP.NET_SessionId", cookies.get("ASP.NET_SessionId"));
+            }
+
             Map<String, Object> formFields = (Map<String, Object>) items.get("formFields");
-            Map<String, String> cookies = ((List<String>) items.get("cookies"))
-                    .stream()
-                    .flatMap(s -> Stream.of(s.split(";")))
-                    .flatMap(s -> Stream.of(new String[][]{s.split("=")}))
-                    .collect(Collectors.toMap(ss -> ss[0], ss -> ss[1]));
 
             Request loginRequest = new Request(KingoUrls.loginPageAddress);
             loginRequest.setMethod(HttpConstant.Method.POST);
-            site.addCookie("ASP.NET_SessionId", cookies.get("ASP.NET_SessionId"));
-            loginRequest.addHeader("Content-Type", "application/x-www-form-urlencoded; charset=GBK");
+            loginRequest.addHeader("Content-Type", "application/x-www-form-urlencoded");
+            loginRequest.addHeader("Referer",KingoUrls.loginPageAddress);
+            loginRequest.setRequestBody(HttpRequestBody.form(formFields, caterpillarProperties.getProperty("encoding")));
 
-            loginRequest.setRequestBody(HttpRequestBody.form(formFields, "gbk"));
 
             Spider.create(new LoginExecutePageProcessor(site))
                     .addRequest(loginRequest)
+                    .addPipeline((resultItems, task) -> loginResult.set(resultItems.get("loginResult")))
                     .run();
+
         }
+
+        return loginResult.get();
+
     }
 
     private Request createSubjectRequest(String termCode, String subjectCode) {
@@ -273,7 +287,7 @@ public class LingnanCourseService {
         form.put("Sel_XNXQ", termCode);
         form.put("Sel_KC", subjectCode);
 
-        Request request = new Request(KingoUrls.subjectQueryPath);
+        Request request = new Request(KingoUrls.subjectQueryPage);
         request.setMethod(HttpConstant.Method.POST);
         request.setRequestBody(HttpRequestBody.form(form, site.getCharset()));
         request.addHeader("Referer", KingoUrls.classInfoQueryPage);

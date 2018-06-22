@@ -9,3 +9,7 @@ spring:
     port: 6379
   cache:
     type: redis
+#logging:
+#  level:
+#    org.apache.http.headers: debug
+#    org.apache.http.wire : debug

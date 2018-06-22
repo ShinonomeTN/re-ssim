@@ -11,7 +11,6 @@ public interface CaptureTaskDTO{
     String getId();
     String getTermCode();
     String getTermName();
-    TaskStatus getTaskStatus();
     Date getCreateDate();
 
     @Value("#{@lingnanCourseService.getStatusByTask(target)}")

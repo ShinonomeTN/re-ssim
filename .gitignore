@@ -27,3 +27,6 @@
 mvnw
 mvnw.cmd
 .mvn/
+
+### Temp folder ###
+_temp/

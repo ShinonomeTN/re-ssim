@@ -1,5 +1,6 @@
 package com.shinonometn.re.ssim.caterpillar;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import us.codecraft.webmagic.Spider;
@@ -10,6 +11,7 @@ import java.util.List;
 
 public class SpiderStatusImpl implements SpiderStatus {
 
+    @JsonIgnore
     protected final Spider spider;
 
     protected Logger logger = LoggerFactory.getLogger(getClass());
@@ -21,6 +23,7 @@ public class SpiderStatusImpl implements SpiderStatus {
         this.monitorSpiderListener = monitorSpiderListener;
     }
 
+    @JsonIgnore
     public Spider getSpider() {
         return this.spider;
     }
@@ -85,6 +88,7 @@ public class SpiderStatusImpl implements SpiderStatus {
     @Override
     public int getPagePerSecond() {
         int runSeconds = (int) (System.currentTimeMillis() - getStartTime().getTime()) / 1000;
+        if(runSeconds == 0) return 0;
         return getSuccessPageCount() / runSeconds;
     }
 
