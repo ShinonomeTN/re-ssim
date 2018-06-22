@@ -152,7 +152,7 @@ public class LingnanCourseService {
 
         CaptureTaskDTO dto = captureTaskRepository.findOneDtoById(taskId);
 
-        if(dto.getSpiderStatus() != null || dto.getSpiderStatus().getStatus().equals("Running"))
+        if (dto.getSpiderStatus() != null || dto.getSpiderStatus().getStatus().equals("Running"))
             throw new IllegalStateException("task_is_running");
 
         if (doesntLogin()) {
@@ -180,7 +180,7 @@ public class LingnanCourseService {
 
         spider.start();
 
-        return ;
+        return dto;
     }
 
     /**
