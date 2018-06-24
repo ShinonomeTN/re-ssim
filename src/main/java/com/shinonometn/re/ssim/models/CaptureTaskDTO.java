@@ -1,18 +1,26 @@
 package com.shinonometn.re.ssim.models;
 
 import com.shinonometn.re.ssim.caterpillar.SpiderStatus;
-
 import org.springframework.beans.factory.annotation.Value;
 
-import java.util.Date;
+import java.io.File;
 
-public interface CaptureTaskDTO{
+public interface CaptureTaskDTO {
 
     String getId();
     String getTermCode();
     String getTermName();
-    Date getCreateDate();
+    String getCreateDate();
+    Boolean getFinished();
+    String getStage();
 
     @Value("#{@lingnanCourseService.getStatusByTask(target)}")
     SpiderStatus getSpiderStatus();
+
+    @Value("#{@lingnanCourseService.getTaskDir(target)}")
+    String getTempDir();
+
+    default boolean getFolderExist() {
+        return new File(getTempDir()).exists();
+    }
 }

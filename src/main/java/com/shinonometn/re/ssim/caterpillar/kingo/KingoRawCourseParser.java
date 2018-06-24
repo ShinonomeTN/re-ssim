@@ -7,7 +7,10 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 public final class KingoRawCourseParser {
 
@@ -86,7 +89,8 @@ public final class KingoRawCourseParser {
                         lesson.setClassNumber(fillLatest ? lessonLatest.getClassNumber() : c);
                         break;
                     case 2:
-                        lesson.setAttendAmount(fillLatest ? lessonLatest.getAttendAmount() : Integer.parseInt(c));
+                        if (fillLatest) lesson.setAttendAmount(lessonLatest.getAttendAmount());
+                        else lesson.setAttendAmount(Integer.parseInt(c));
                         break;
                     case 3:
                         lesson.setClassType(fillLatest ? lessonLatest.getClassType() : c);

@@ -4,6 +4,8 @@ import com.shinonometn.re.ssim.caterpillar.SpiderMonitor;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.task.TaskExecutor;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -33,5 +35,10 @@ public class ReSsimApplication {
         Properties properties = new Properties();
         properties.load(new FileInputStream("./caterpillar_settings.properties"));
         return properties;
+    }
+
+    @Bean
+    public TaskExecutor taskExecutor(){
+        return new ThreadPoolTaskExecutor();
     }
 }

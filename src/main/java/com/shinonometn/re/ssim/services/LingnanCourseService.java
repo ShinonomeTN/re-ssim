@@ -10,10 +10,15 @@ import com.shinonometn.re.ssim.caterpillar.kingo.pojo.Course;
 import com.shinonometn.re.ssim.commons.CacheKeys;
 import com.shinonometn.re.ssim.models.CaptureTask;
 import com.shinonometn.re.ssim.models.CaptureTaskDTO;
+import com.shinonometn.re.ssim.models.CourseEntity;
 import com.shinonometn.re.ssim.repository.CaptureTaskRepository;
+import com.shinonometn.re.ssim.repository.CourseRepository;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.stereotype.Service;
 import us.codecraft.webmagic.Request;
 import us.codecraft.webmagic.Site;
@@ -23,13 +28,19 @@ import us.codecraft.webmagic.utils.HttpConstant;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Service
 public class LingnanCourseService {
+
+    private Logger logger = LoggerFactory.getLogger("com.shinonometn.ssim.lingnanCourse");
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     private final Site site = Site.me()
             .setDomain("jwgl.lnc.edu.cn")
@@ -38,22 +49,33 @@ public class LingnanCourseService {
             .setSleepTime(500);
 
     private final CacheService cacheService;
-    private final CaptureTaskRepository captureTaskRepository;
     private final SpiderMonitor spiderMonitor;
 
+    private final CaptureTaskRepository captureTaskRepository;
+    private final CourseRepository courseRepository;
+
     private final Properties caterpillarProperties;
+    private final TaskExecutor taskExecutor;
+
+    private final File tempDir = new File(System.getProperty("user.dir"), "_temp");
+
+    private final AtomicInteger importingTaskCount = new AtomicInteger(0);
 
     @Autowired
     public LingnanCourseService(CacheService cacheService,
                                 CaptureTaskRepository captureTaskRepository,
                                 SpiderMonitor spiderMonitor,
+                                CourseRepository courseRepository,
                                 @Qualifier("caterpillarProperties")
-                                        Properties caterpillarProperties) {
+                                        Properties caterpillarProperties,
+                                TaskExecutor taskExecutor) {
 
         this.cacheService = cacheService;
         this.captureTaskRepository = captureTaskRepository;
         this.spiderMonitor = spiderMonitor;
+        this.courseRepository = courseRepository;
         this.caterpillarProperties = caterpillarProperties;
+        this.taskExecutor = taskExecutor;
 
         // Setup
         this.site.setUserAgent(caterpillarProperties.getProperty("user.agent"))
@@ -73,6 +95,7 @@ public class LingnanCourseService {
         Map<String, String> cachedResult = cacheService.get(CacheKeys.TERM_LIST, new TypeReference<Map<String, String>>() {
         });
         if (cachedResult != null) {
+            logger.debug("Cached term list found, use cache data.");
             return cachedResult;
         }
 
@@ -84,6 +107,7 @@ public class LingnanCourseService {
                 .run();
 
         cacheService.put(CacheKeys.TERM_LIST, capturedResult);
+        logger.debug("Cache not found, returning remote data.");
 
         return capturedResult;
     }
@@ -104,7 +128,7 @@ public class LingnanCourseService {
      * @return task list
      */
     public List<CaptureTaskDTO> listTasks() {
-        return captureTaskRepository.findAllProjectedBy();
+        return captureTaskRepository.findAllProjected();
     }
 
     /**
@@ -118,6 +142,7 @@ public class LingnanCourseService {
         captureTask.setCreateDate(new Date());
         captureTask.setTermCode(termCode);
         captureTask.setTermName(getTermList().get(termCode));
+        captureTask.setStage(CaptureTask.STAGE_INIT);
 
         return captureTaskRepository.save(captureTask);
     }
@@ -133,6 +158,7 @@ public class LingnanCourseService {
         if (!captureTaskResult.isPresent()) return null;
 
         SpiderStatus spiderStatus = spiderMonitor.getSpiderStatus().get(taskId);
+        if (spiderStatus == null) throw new IllegalStateException("task_not_capturing");
         spiderStatus.stop();
 
         return captureTaskRepository.findProjectedById(taskId);
@@ -152,20 +178,17 @@ public class LingnanCourseService {
 
         CaptureTaskDTO dto = captureTaskRepository.findProjectedById(taskId);
 
-        if (dto.getSpiderStatus() != null && dto.getSpiderStatus().getStatus().equals("Running"))
-            throw new IllegalStateException("task_is_running");
+        if(dto.getSpiderStatus() != null && dto.getSpiderStatus().getStatus().equals("Running"))
+            throw new IllegalStateException("spider_running");
 
-        if (notLogin() && !doLogin()) {
-            throw new IllegalStateException("login_to_kingo_failed");
-        }
+        if (notLogin() && !doLogin()) throw new IllegalStateException("login_to_kingo_failed");
 
         File tempFolder = getTempDir(taskId);
-        ObjectMapper objectMapper = new ObjectMapper();
         Spider spider = Spider.create(new CourseDetailsPageProcessor(site))
                 .addPipeline((resultItems, task) -> {
                     try {
                         Course course = resultItems.get("subject");
-                        objectMapper.writeValue(new FileOutputStream(new File(tempFolder, course.getCode())), course);
+                        objectMapper.writeValue(new FileOutputStream(new File(tempFolder, Objects.requireNonNull(course.getCode()))), course);
                     } catch (Exception ignore) {
 
                     }
@@ -181,7 +204,120 @@ public class LingnanCourseService {
 
         spider.start();
 
+        CaptureTask task = captureTaskResult.get();
+        task.setStage(CaptureTask.STAGE_CAPTURE);
+        captureTaskRepository.save(task);
+
         return dto;
+    }
+
+
+    /**
+     * Delete a not running task
+     *
+     * @param id task id
+     */
+    public void deleteTask(String id) {
+        Map<String, SpiderStatus> spiderStatusMap = spiderMonitor.getSpiderStatus();
+        if (spiderStatusMap.containsKey(id)) {
+
+            SpiderStatus spiderStatus = spiderStatusMap.get(id);
+            if (spiderStatus.getStatus().equals("Running")) throw new IllegalStateException("spider_running");
+
+            spiderStatusMap.remove(id);
+        }
+
+        captureTaskRepository.deleteById(id);
+    }
+
+    /**
+     * Start importing data to database
+     *
+     * @param captureTaskDTO task
+     * @return task base info
+     */
+    public CaptureTask importSubjectData(CaptureTaskDTO captureTaskDTO) {
+
+        Optional<CaptureTask> captureTaskResult = captureTaskRepository.findById(captureTaskDTO.getId());
+        if (!captureTaskResult.isPresent()) throw new IllegalStateException("What the hell, where is this task?????");
+        CaptureTask captureTask = captureTaskResult.get();
+
+        Runnable importTask = () -> {
+            logger.info("Importing of {} started.", captureTaskDTO.getId());
+            importingTaskCount.incrementAndGet();
+
+            ArrayList<String> succeedEntity = new ArrayList<>();
+
+            try {
+                File folder = new File(captureTaskDTO.getTempDir());
+                if (!folder.isDirectory()) throw new IllegalStateException("???Why the file IS NOT a folder???");
+
+                for (File file : Objects.requireNonNull(folder.listFiles())) {
+                    CourseEntity courseEntity = objectMapper.readValue(file, new TypeReference<CourseEntity>() {
+                    });
+
+                    succeedEntity.add(courseRepository.save(courseEntity).getId());
+                }
+
+                captureTask.setFinished(true);
+                captureTaskRepository.save(captureTask);
+
+                logger.info("Importing of {} succeed", captureTaskDTO.getId());
+
+            } catch (IOException e) {
+                logger.error("Something happen while importing files, reversing...", e);
+                succeedEntity.forEach(courseRepository::deleteById);
+                logger.warn("Reversing of task {} completed.", captureTaskDTO.getId());
+            } finally {
+                importingTaskCount.decrementAndGet();
+            }
+
+        };
+
+        taskExecutor.execute(importTask);
+        captureTask.setStage(CaptureTask.STAGE_IMPORT);
+        captureTaskRepository.save(captureTask);
+        return captureTask;
+    }
+
+    /*
+
+        Status
+
+    */
+
+    /**
+     * Get importing task count
+     *
+     * @return int
+     */
+    public Integer getImportingTaskCount() {
+        return importingTaskCount.get();
+    }
+
+    /**
+     * Get running spider counts
+     *
+     * @return long
+     */
+    public long getCapturingTaskCount() {
+        return spiderMonitor.getSpiderStatus().values().stream().filter(i -> i.getStatus().equals("Running")).count();
+    }
+
+    /*
+
+        DTO methods
+
+     */
+
+    /**
+     * Get task temp dir
+     *
+     * @param captureTask
+     * @return
+     */
+    public String getTaskDir(CaptureTask captureTask) {
+        return new File(tempDir, Objects.requireNonNull(captureTask.getId())).getAbsolutePath();
     }
 
     /**
@@ -195,9 +331,10 @@ public class LingnanCourseService {
         return spiderMonitor.getSpiderStatus().get(captureTask.getId());
     }
 
+    /*
 
-    /**
-     * Private procedure
+      Private procedure
+
      */
 
     private Collection<String> fetchTermList(String termCode) {
@@ -207,6 +344,8 @@ public class LingnanCourseService {
                 .addUrl(KingoUrls.subjectListQueryPath + termCode)
                 .addPipeline((resultItems, task) -> termList.putAll(resultItems.get("courses")))
                 .run();
+
+        logger.debug("Fetched remote course list of term {}.", termCode);
 
         return termList.keySet();
     }
@@ -230,6 +369,8 @@ public class LingnanCourseService {
                     .addRequest(request)
                     .addPipeline((resultItems, task) -> isLogin.set(resultItems.get("isLogin"))).run();
 
+            logger.debug("Login status {}", isLogin.get() ? "valid" : "invalid");
+
             return !isLogin.get();
         }
     }
@@ -250,7 +391,7 @@ public class LingnanCourseService {
 
         if ((Boolean) items.get("ready")) {
 
-            if(items.get("cookies") != null){
+            if (items.get("cookies") != null) {
                 Map<String, String> cookies = ((List<String>) items.get("cookies"))
                         .stream()
                         .flatMap(s -> Stream.of(s.split(";")))
@@ -265,7 +406,7 @@ public class LingnanCourseService {
             Request loginRequest = new Request(KingoUrls.loginPageAddress);
             loginRequest.setMethod(HttpConstant.Method.POST);
             loginRequest.addHeader("Content-Type", "application/x-www-form-urlencoded");
-            loginRequest.addHeader("Referer",KingoUrls.loginPageAddress);
+            loginRequest.addHeader("Referer", KingoUrls.loginPageAddress);
             loginRequest.setRequestBody(HttpRequestBody.form(formFields, caterpillarProperties.getProperty("encoding")));
 
 
@@ -275,6 +416,9 @@ public class LingnanCourseService {
                     .run();
 
         }
+
+        logger.debug("Login to kingo {}.", (loginResult.get() ? "successful" : "failed"));
+
 
         return loginResult.get();
 
@@ -296,4 +440,8 @@ public class LingnanCourseService {
 
     }
 
+    @NotNull
+    public CaptureTaskDTO queryTask(@NotNull String id) {
+        return captureTaskRepository.findProjectedById(id);
+    }
 }

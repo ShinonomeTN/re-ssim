@@ -44,7 +44,7 @@ public class CourseDetailsPageProcessor implements PageProcessor {
 
         Site site = Site.me()
                 .setDomain("jwgl.lnc.edu.cn")
-                .setTimeOut(5000)
+                .setTimeOut(10000)
                 .setRetryTimes(81)
                 .setSleepTime(500)
                 .setCharset("GBK")
