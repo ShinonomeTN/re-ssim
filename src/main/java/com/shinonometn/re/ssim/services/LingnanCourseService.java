@@ -14,10 +14,14 @@ import com.shinonometn.re.ssim.models.CourseEntity;
 import com.shinonometn.re.ssim.repository.CaptureTaskRepository;
 import com.shinonometn.re.ssim.repository.CourseRepository;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.stereotype.Service;
 import us.codecraft.webmagic.Request;
@@ -90,14 +94,15 @@ public class LingnanCourseService {
      *
      * @return a map, term code as key, term name as value
      */
+    @Cacheable(CacheKeys.CAPTURE_TERM_LIST)
     public Map<String, String> getTermList() {
 
-        Map<String, String> cachedResult = cacheService.get(CacheKeys.TERM_LIST, new TypeReference<Map<String, String>>() {
-        });
-        if (cachedResult != null) {
-            logger.debug("Cached term list found, use cache data.");
-            return cachedResult;
-        }
+//        Map<String, String> cachedResult = cacheService.get(CacheKeys.CAPTURE_TERM_LIST, new TypeReference<Map<String, String>>() {
+//        });
+//        if (cachedResult != null) {
+//            logger.debug("Cached term list found, use cache data.");
+//            return cachedResult;
+//        }
 
         final Map<String, String> capturedResult = new HashMap<>();
 
@@ -106,7 +111,7 @@ public class LingnanCourseService {
                 .addPipeline((r, t) -> capturedResult.putAll(r.get(TermListPageProcessor.FIELD_TERMS)))
                 .run();
 
-        cacheService.put(CacheKeys.TERM_LIST, capturedResult);
+        cacheService.put(CacheKeys.CAPTURE_TERM_LIST, capturedResult);
         logger.debug("Cache not found, returning remote data.");
 
         return capturedResult;
@@ -117,8 +122,9 @@ public class LingnanCourseService {
      *
      * @return see getTermList()
      */
+    @CachePut(CacheKeys.CAPTURE_TERM_LIST)
     public Map<String, String> reloadAndGetTermList() {
-        cacheService.expire(CacheKeys.TERM_LIST);
+//        cacheService.expire(CacheKeys.CAPTURE_TERM_LIST);
         return getTermList();
     }
 
@@ -236,6 +242,9 @@ public class LingnanCourseService {
      * @param captureTaskDTO task
      * @return task base info
      */
+    @CacheEvict({
+            CacheKeys.TERM_COURSE_LIST
+    })
     public CaptureTask importSubjectData(CaptureTaskDTO captureTaskDTO) {
 
         Optional<CaptureTask> captureTaskResult = captureTaskRepository.findById(captureTaskDTO.getId());
@@ -277,6 +286,8 @@ public class LingnanCourseService {
         taskExecutor.execute(importTask);
         captureTask.setStage(CaptureTask.STAGE_IMPORT);
         captureTaskRepository.save(captureTask);
+
+        cacheService.expire(CacheKeys.TERM_LIST);
         return captureTask;
     }
 
@@ -440,7 +451,7 @@ public class LingnanCourseService {
 
     }
 
-    @NotNull
+    @Nullable
     public CaptureTaskDTO queryTask(@NotNull String id) {
         return captureTaskRepository.findProjectedById(id);
     }

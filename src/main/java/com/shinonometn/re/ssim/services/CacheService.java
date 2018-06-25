@@ -42,6 +42,14 @@ public class CacheService {
         }
     }
 
+    public void put(String key, long expire, Object object){
+        try {
+            redis.opsForValue().set(key,objectMapper.writeValueAsString(object),expire);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
     public void expire(String key){
         redis.delete(key);
     }
