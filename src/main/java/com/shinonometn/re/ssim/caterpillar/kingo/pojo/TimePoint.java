@@ -5,6 +5,9 @@ public class TimePoint {
     private int day;
     private int turn;
 
+    public TimePoint(){
+    }
+
     public TimePoint(int week, int day, int turn) {
         this.week = week;
         this.day = day;

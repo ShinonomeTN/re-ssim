@@ -29,3 +29,6 @@ mvnw.cmd
 .mvn/
 
 caterpillar_settings.properties
+
+### Temp folder ###
+_temp/

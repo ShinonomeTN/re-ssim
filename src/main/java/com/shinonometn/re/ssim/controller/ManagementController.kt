@@ -10,11 +10,11 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping("/api/mng")
 class ManagementController(@Autowired private val lingnanCourseService: LingnanCourseService) {
 
-    @GetMapping("/termList")
+    @GetMapping("/terms")
     @ResponseBody
     fun termList(): MutableMap<String, String>? = lingnanCourseService.termList
 
-    @GetMapping("/termList", params = ["refresh"])
+    @GetMapping("/terms", params = ["refresh"])
     @ResponseBody
     fun termListRefresh(): MutableMap<String, String>? = lingnanCourseService.reloadAndGetTermList()
 
@@ -43,6 +43,7 @@ class ManagementController(@Autowired private val lingnanCourseService: LingnanC
             lingnanCourseService.startTask(id)
 
     @PostMapping("/task/{id}", params = ["stop"])
+    @ResponseBody
     fun stopTask(@PathVariable("id") id: String) = HashMap<String, Any>().apply {
         val dto = lingnanCourseService.stopTask(id)
         if (dto == null) {
@@ -53,5 +54,59 @@ class ManagementController(@Autowired private val lingnanCourseService: LingnanC
             this["data"] = dto
         }
     }
+
+    @PostMapping("/task/{id}",params = ["import"])
+    @ResponseBody
+    fun importTask(@PathVariable("id") id: String) =
+            HashMap<String, Any>().apply {
+
+                val captureTaskDTO: CaptureTaskDTO? = lingnanCourseService.queryTask(id)
+
+                when {
+                    captureTaskDTO == null -> {
+                        this["error"] = "task_import_failed"
+                        this["message"] = "task_not_found"
+                        return this
+                    }
+
+                    captureTaskDTO.finished -> {
+                        this["error"] = "task_import_failed"
+                        this["message"] = "task_finished"
+                        return this
+                    }
+
+                    !captureTaskDTO.folderExist -> {
+                        this["error"] = "task_import_failed"
+                        this["message"] = "capture_directory_not_found"
+                        return this
+                    }
+
+                    captureTaskDTO.spiderStatus != null && captureTaskDTO.spiderStatus!!.status == "Running" -> {
+                        this["error"] = "task_import_failed"
+                        this["spider_running"] = "spider_running"
+                        return this
+                    }
+                }
+
+                this["message"] = "success"
+                this["data"] = lingnanCourseService.importSubjectData(captureTaskDTO);
+            }
+
+    @DeleteMapping("/task/{id}")
+    @ResponseBody
+    fun deleteTask(id : String) =
+            HashMap<String,Any>().apply {
+                lingnanCourseService.deleteTask(id)
+                this["message"]="success"
+            }
+
+    @GetMapping("/dashes")
+    @ResponseBody
+    fun dashes() =
+            HashMap<String,Any>().apply {
+                this["importingTaskCount"] = lingnanCourseService.importingTaskCount
+                this["capturingTaskCount"] = lingnanCourseService.capturingTaskCount
+            }
+
 
 }

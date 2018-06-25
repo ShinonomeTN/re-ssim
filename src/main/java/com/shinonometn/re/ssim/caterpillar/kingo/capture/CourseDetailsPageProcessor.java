@@ -44,8 +44,8 @@ public class CourseDetailsPageProcessor implements PageProcessor {
 
         Site site = Site.me()
                 .setDomain("jwgl.lnc.edu.cn")
-                .setTimeOut(5000)
-                .setRetryTimes(3)
+                .setTimeOut(10000)
+                .setRetryTimes(81)
                 .setSleepTime(500)
                 .setCharset("GBK")
                 .setUserAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_3) AppleWebKit/602.4.8 (KHTML, like Gecko) Version/10.0.3 Safari/602.4.8")
@@ -66,9 +66,10 @@ public class CourseDetailsPageProcessor implements PageProcessor {
                     .flatMap(s -> Stream.of(new String[][]{s.split("=")}))
                     .collect(Collectors.toMap(ss -> ss[0], ss -> ss[1]));
 
+            site.addCookie("ASP.NET_SessionId", cookies.get("ASP.NET_SessionId"));
+
             Request loginRequest = new Request(loginPageAddress);
             loginRequest.setMethod(HttpConstant.Method.POST);
-            site.addCookie("ASP.NET_SessionId", cookies.get("ASP.NET_SessionId"));
             loginRequest.addHeader("Content-Type", "application/x-www-form-urlencoded; charset=GBK");
 
             loginRequest.setRequestBody(HttpRequestBody.form(formFields, "gbk"));
