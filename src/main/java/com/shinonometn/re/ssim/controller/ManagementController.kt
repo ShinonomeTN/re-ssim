@@ -18,18 +18,18 @@ open class ManagementController(@Autowired private val lingnanCourseService: Lin
      * Get term list
      *
      */
-    @GetMapping("/terms")
+    @GetMapping("/term")
     @ResponseBody
-    fun termList(): MutableMap<String, String>? = lingnanCourseService.termList
+    open fun termList(): MutableMap<String, String> = lingnanCourseService.termList
 
     /**
      *
      * Clear cache and get term list
      *
      */
-    @GetMapping("/terms", params = ["refresh"])
+    @GetMapping("/term", params = ["refresh"])
     @ResponseBody
-    fun termListRefresh(): MutableMap<String, String>? = lingnanCourseService.reloadAndGetTermList()
+    open fun termListRefresh(): MutableMap<String, String> = lingnanCourseService.reloadAndGetTermList()
 
     /**
      *
@@ -38,7 +38,7 @@ open class ManagementController(@Autowired private val lingnanCourseService: Lin
      */
     @GetMapping("/task")
     @ResponseBody
-    fun taskList(): List<CaptureTaskDTO> {
+    open fun taskList(): List<CaptureTaskDTO> {
         return lingnanCourseService.listTasks()
     }
 
@@ -49,7 +49,7 @@ open class ManagementController(@Autowired private val lingnanCourseService: Lin
      */
     @PostMapping("/task")
     @ResponseBody
-    fun createTask(@RequestParam("termCode") termCode: String) =
+    open fun createTask(@RequestParam("termCode") termCode: String) =
             HashMap<String, Any>().apply {
                 if (!lingnanCourseService.termList!!.containsKey(termCode)) {
                     this["message"] = "unknown_term_code"
@@ -67,7 +67,7 @@ open class ManagementController(@Autowired private val lingnanCourseService: Lin
      */
     @PostMapping("/task/{id}", params = ["start"])
     @ResponseBody
-    fun startTask(@PathVariable("id") id: String): CaptureTaskDTO? =
+    open fun startTask(@PathVariable("id") id: String): CaptureTaskDTO? =
             lingnanCourseService.startTask(id)
 
     /**
@@ -77,7 +77,7 @@ open class ManagementController(@Autowired private val lingnanCourseService: Lin
      */
     @PostMapping("/task/{id}", params = ["stop"])
     @ResponseBody
-    fun stopTask(@PathVariable("id") id: String) = HashMap<String, Any>().apply {
+    open fun stopTask(@PathVariable("id") id: String) = HashMap<String, Any>().apply {
         val dto = lingnanCourseService.stopTask(id)
         if (dto == null) {
             this["error"] = "task_operate_failed"
@@ -95,7 +95,7 @@ open class ManagementController(@Autowired private val lingnanCourseService: Lin
      */
     @PostMapping("/task/{id}", params = ["import"])
     @ResponseBody
-    fun importTask(@PathVariable("id") id: String) =
+    open fun importTask(@PathVariable("id") id: String) =
             HashMap<String, Any>().apply {
 
                 val captureTaskDTO: CaptureTaskDTO? = lingnanCourseService.queryTask(id)
@@ -137,7 +137,7 @@ open class ManagementController(@Autowired private val lingnanCourseService: Lin
      */
     @DeleteMapping("/task/{id}")
     @ResponseBody
-    fun deleteTask(@PathVariable("id") id: String) =
+    open fun deleteTask(@PathVariable("id") id: String) =
             HashMap<String, Any>().apply {
                 val captureTaskResult = lingnanCourseService.queryTask(id)
                 if (captureTaskResult == null) {
@@ -178,6 +178,8 @@ open class ManagementController(@Autowired private val lingnanCourseService: Lin
             CacheKeys.TERM_CLASS_LIST,
             CacheKeys.TERM_COURSE_LIST,
             CacheKeys.TERM_WEEK_RANGE,
+            CacheKeys.TERM_CLASS_TYPE,
+            CacheKeys.TERM_CLASSROOM,
             allEntries = true)
     open fun clearCache() =
             HashMap<String, Any>().apply {

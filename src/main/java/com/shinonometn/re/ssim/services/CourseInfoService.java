@@ -12,13 +12,11 @@ import org.springframework.stereotype.Service;
 @Service
 public class CourseInfoService {
 
-    private final CacheService cacheService;
     private final MongoTemplate mongoTemplate;
     private final CourseRepository courseRepository;
 
     @Autowired
-    public CourseInfoService(CacheService cacheService, MongoTemplate mongoTemplate, CourseRepository courseRepository) {
-        this.cacheService = cacheService;
+    public CourseInfoService(MongoTemplate mongoTemplate, CourseRepository courseRepository) {
         this.mongoTemplate = mongoTemplate;
         this.courseRepository = courseRepository;
     }

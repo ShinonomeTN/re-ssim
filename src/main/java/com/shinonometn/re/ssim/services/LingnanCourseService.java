@@ -52,7 +52,6 @@ public class LingnanCourseService {
             .setRetryTimes(3)
             .setSleepTime(500);
 
-    private final CacheService cacheService;
     private final SpiderMonitor spiderMonitor;
 
     private final CaptureTaskRepository captureTaskRepository;
@@ -66,15 +65,13 @@ public class LingnanCourseService {
     private final AtomicInteger importingTaskCount = new AtomicInteger(0);
 
     @Autowired
-    public LingnanCourseService(CacheService cacheService,
-                                CaptureTaskRepository captureTaskRepository,
+    public LingnanCourseService(CaptureTaskRepository captureTaskRepository,
                                 SpiderMonitor spiderMonitor,
                                 CourseRepository courseRepository,
                                 @Qualifier("caterpillarProperties")
                                         Properties caterpillarProperties,
                                 TaskExecutor taskExecutor) {
 
-        this.cacheService = cacheService;
         this.captureTaskRepository = captureTaskRepository;
         this.spiderMonitor = spiderMonitor;
         this.courseRepository = courseRepository;
@@ -95,14 +92,8 @@ public class LingnanCourseService {
      * @return a map, term code as key, term name as value
      */
     @Cacheable(CacheKeys.CAPTURE_TERM_LIST)
+    @NotNull
     public Map<String, String> getTermList() {
-
-//        Map<String, String> cachedResult = cacheService.get(CacheKeys.CAPTURE_TERM_LIST, new TypeReference<Map<String, String>>() {
-//        });
-//        if (cachedResult != null) {
-//            logger.debug("Cached term list found, use cache data.");
-//            return cachedResult;
-//        }
 
         final Map<String, String> capturedResult = new HashMap<>();
 
@@ -111,7 +102,6 @@ public class LingnanCourseService {
                 .addPipeline((r, t) -> capturedResult.putAll(r.get(TermListPageProcessor.FIELD_TERMS)))
                 .run();
 
-        cacheService.put(CacheKeys.CAPTURE_TERM_LIST, capturedResult);
         logger.debug("Cache not found, returning remote data.");
 
         return capturedResult;
@@ -124,7 +114,6 @@ public class LingnanCourseService {
      */
     @CachePut(CacheKeys.CAPTURE_TERM_LIST)
     public Map<String, String> reloadAndGetTermList() {
-//        cacheService.expire(CacheKeys.CAPTURE_TERM_LIST);
         return getTermList();
     }
 
@@ -286,8 +275,6 @@ public class LingnanCourseService {
         taskExecutor.execute(importTask);
         captureTask.setStage(CaptureTask.STAGE_IMPORT);
         captureTaskRepository.save(captureTask);
-
-        cacheService.expire(CacheKeys.TERM_LIST);
         return captureTask;
     }
 
