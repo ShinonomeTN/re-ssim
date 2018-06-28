@@ -22,6 +22,7 @@ server:
 
 logging:
   level:
+#    root : debug
 #    org.apache.http.headers: debug
 #    org.apache.http.wire : debug
     org.apache.coyote.http11.Http11Processor : debug

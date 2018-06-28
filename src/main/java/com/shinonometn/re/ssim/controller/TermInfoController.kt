@@ -43,9 +43,9 @@ constructor(private val courseInfoService: CourseInfoService) {
     @Cacheable(CacheKeys.TERM_COURSE_LIST)
     open fun listTermCourse(@PathVariable("name") termName: String): Any =
             courseInfoService.executeAggregation(newAggregation(
-                    match(Criteria.where("term").`is`(termName)),
-                    project("code", "name", "unit", "lessons", "assessmentType")
+                    project("term", "code", "name", "unit", "lessons", "assessmentType")
                             .and("lessons.classType").`as`("classType"),
+                    match(Criteria.where("term").`is`(termName)),
                     unwind("lessons"),
                     group("code", "name", "unit", "classType")
                             .count().`as`("courseCount"),
@@ -63,6 +63,7 @@ constructor(private val courseInfoService: CourseInfoService) {
     @Cacheable(CacheKeys.TERM_TEACHER_LIST)
     open fun listTermTeachers(@PathVariable("name") termName: String): Any? =
             courseInfoService.executeAggregation(newAggregation(
+                    project("term","lessons.teacher"),
                     match(Criteria.where("term").`is`(termName)),
                     unwind("lessons"),
                     group().addToSet("lessons.teacher").`as`("teachers"),
@@ -115,7 +116,7 @@ constructor(private val courseInfoService: CourseInfoService) {
      * Get all class types of term
      *
      */
-    @GetMapping("/{name}",params = ["classType"])
+    @GetMapping("/{name}", params = ["classType"])
     @ResponseBody
     @Cacheable(CacheKeys.TERM_CLASS_TYPE)
     open fun listTermClassTypes(@PathVariable("name") termName: String): Any? =
