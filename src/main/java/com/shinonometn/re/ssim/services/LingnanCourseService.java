@@ -13,6 +13,7 @@ import com.shinonometn.re.ssim.models.CaptureTaskDTO;
 import com.shinonometn.re.ssim.models.CourseEntity;
 import com.shinonometn.re.ssim.repository.CaptureTaskRepository;
 import com.shinonometn.re.ssim.repository.CourseRepository;
+import org.bson.Document;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -23,6 +24,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.core.task.TaskExecutor;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Service;
 import us.codecraft.webmagic.Request;
 import us.codecraft.webmagic.Site;
@@ -56,6 +58,7 @@ public class LingnanCourseService {
 
     private final CaptureTaskRepository captureTaskRepository;
     private final CourseRepository courseRepository;
+    private final MongoTemplate mongoTemplate;
 
     private final Properties caterpillarProperties;
     private final TaskExecutor taskExecutor;
@@ -68,13 +71,14 @@ public class LingnanCourseService {
     public LingnanCourseService(CaptureTaskRepository captureTaskRepository,
                                 SpiderMonitor spiderMonitor,
                                 CourseRepository courseRepository,
-                                @Qualifier("caterpillarProperties")
-                                        Properties caterpillarProperties,
+                                MongoTemplate mongoTemplate,
+                                @Qualifier("caterpillarProperties") Properties caterpillarProperties,
                                 TaskExecutor taskExecutor) {
 
         this.captureTaskRepository = captureTaskRepository;
         this.spiderMonitor = spiderMonitor;
         this.courseRepository = courseRepository;
+        this.mongoTemplate = mongoTemplate;
         this.caterpillarProperties = caterpillarProperties;
         this.taskExecutor = taskExecutor;
 
@@ -173,7 +177,7 @@ public class LingnanCourseService {
 
         CaptureTaskDTO dto = captureTaskRepository.findProjectedById(taskId);
 
-        if(dto.getSpiderStatus() != null && dto.getSpiderStatus().getStatus().equals("Running"))
+        if (dto.getSpiderStatus() != null && dto.getSpiderStatus().getStatus().equals("Running"))
             throw new IllegalStateException("spider_running");
 
         if (notLogin() && !doLogin()) throw new IllegalStateException("login_to_kingo_failed");
@@ -243,6 +247,10 @@ public class LingnanCourseService {
         Runnable importTask = () -> {
             logger.info("Importing of {} started.", captureTaskDTO.getId());
             importingTaskCount.incrementAndGet();
+
+            mongoTemplate.getCollection(mongoTemplate.getCollectionName(CourseEntity.class))
+                    .deleteMany(new Document("term",captureTaskDTO.getTermName()));
+            logger.info("Records of {} deleted. If task failed, it will not be revert.", captureTaskDTO.getTermName());
 
             ArrayList<String> succeedEntity = new ArrayList<>();
 

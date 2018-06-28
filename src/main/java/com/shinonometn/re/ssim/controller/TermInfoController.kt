@@ -63,12 +63,11 @@ constructor(private val courseInfoService: CourseInfoService) {
     @Cacheable(CacheKeys.TERM_TEACHER_LIST)
     open fun listTermTeachers(@PathVariable("name") termName: String): Any? =
             courseInfoService.executeAggregation(newAggregation(
-                    project("term","lessons.teacher"),
+                    project("term").and("lessons.teacher").`as`("teachers"),
                     match(Criteria.where("term").`is`(termName)),
-                    unwind("lessons"),
-                    group().addToSet("lessons.teacher").`as`("teachers"),
-                    project("teachers")
-                            .andExclude("_id")
+                    unwind("teachers"),
+                    group().addToSet("teachers").`as`("teachers"),
+                    project().andExclude("_id")
             )).uniqueMappedResult
 
     /**
@@ -81,13 +80,12 @@ constructor(private val courseInfoService: CourseInfoService) {
     @Cacheable(CacheKeys.TERM_CLASS_LIST)
     open fun listTermClasses(@PathVariable("name") termName: String): Any? =
             courseInfoService.executeAggregation(newAggregation(
+                    project("term").and("lessons.classAttend").`as`("classAttend"),
                     match(Criteria.where("term").`is`(termName)),
-                    unwind("lessons"),
-                    group("lessons.classAttend"),
-                    unwind("_id"),
-                    group().addToSet("_id").`as`("classes"),
-                    project("classes")
-                            .andExclude("_id")
+                    unwind("classAttend"),
+                    unwind("classAttend"),
+                    group().addToSet("classAttend").`as`("classes"),
+                    project().andExclude("_id")
             )).uniqueMappedResult
 
     /**
@@ -100,15 +98,14 @@ constructor(private val courseInfoService: CourseInfoService) {
     @Cacheable(CacheKeys.TERM_WEEK_RANGE)
     open fun showTermWeekRange(@PathVariable("name") termName: String): Any? =
             courseInfoService.executeAggregation(newAggregation(
+                    project("term").and("lessons.timePoint").`as`("timePoint"),
                     match(Criteria.where("term").`is`(termName)),
-                    unwind("lessons"),
-                    group("lessons.timePoint"),
-                    unwind("_id"),
+                    unwind("timePoint"),
+                    unwind("timePoint"),
                     group()
-                            .max("_id.week").`as`("max")
-                            .min("_id.week").`as`("min"),
-                    project("max", "min")
-                            .andExclude("_id")
+                            .max("timePoint.week").`as`("max")
+                            .min("timePoint.week").`as`("min"),
+                    project().andExclude("_id")
             )).uniqueMappedResult
 
     /**
@@ -121,9 +118,10 @@ constructor(private val courseInfoService: CourseInfoService) {
     @Cacheable(CacheKeys.TERM_CLASS_TYPE)
     open fun listTermClassTypes(@PathVariable("name") termName: String): Any? =
             courseInfoService.executeAggregation(newAggregation(
+                    project("term").and("lessons.classType").`as`("classType"),
                     match(Criteria.where("term").`is`(termName)),
-                    unwind("lessons"),
-                    group().addToSet("lessons.classType").`as`("classTypes"),
+                    unwind("classType"),
+                    group().addToSet("classType").`as`("classTypes"),
                     project("classTypes")
                             .andExclude("_id")
             )).uniqueMappedResult
@@ -138,9 +136,10 @@ constructor(private val courseInfoService: CourseInfoService) {
     @Cacheable(CacheKeys.TERM_CLASSROOM)
     open fun listTermClassrooms(@PathVariable("name") termName: String): Any? =
             courseInfoService.executeAggregation(newAggregation(
+                    project("term").and("lessons.position").`as`("position"),
                     match(Criteria.where("term").`is`(termName)),
-                    unwind("lessons"),
-                    group().addToSet("lessons.position").`as`("position"),
+                    unwind("position"),
+                    group().addToSet("position").`as`("position"),
                     project("position")
                             .andExclude("_id")
             )).uniqueMappedResult

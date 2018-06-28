@@ -1,3 +1,62 @@
+// Course Type
+db.courseEntity.aggregate([
+  {
+    $project: {
+      term: true,
+      classType: "$lessons.classType"
+    }
+  },
+  {
+    $match: {
+      term: "2017-2018学年第二学期"
+    }
+  },
+  { $unwind: "$classType" },
+  {
+    $group: {
+      _id: null,
+      classType: { $addToSet: "$classType" }
+    }
+  }
+]);
+
+db.courseEntity.aggregate([
+  {
+    $project: {
+      term: true,
+      timePoint: "$lessons.timePoint"
+    }
+  },
+  {
+    $match: {
+      term: "2017-2018学年第二学期"
+    }
+  },
+  { $unwind : "$timePoint" },
+  { $unwind : "$timePoint" },
+  {
+    $group : {
+      _id : null,
+      maxWeek : { $max : "$timePoint.week"},
+      minWeek : { $min : "$timePoint.week"}
+    }
+  }
+]);
+
+db.courseEntity.aggregate([
+  {
+    $project: {
+      term: true,
+      timePoint: "$lessons.timePoint"
+    }
+  },
+  {
+    $match: {
+      term: "2017-2018学年第二学期"
+    }
+  }
+]);
+
 // Courses
 db.courseEntity.aggregate([
   {

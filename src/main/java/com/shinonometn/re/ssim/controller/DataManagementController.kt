@@ -11,7 +11,7 @@ import java.io.File
 
 @Controller
 @RequestMapping("/api/mng")
-open class ManagementController(@Autowired private val lingnanCourseService: LingnanCourseService) {
+open class DataManagementController(@Autowired private val lingnanCourseService: LingnanCourseService) {
 
     /**
      *
@@ -127,7 +127,7 @@ open class ManagementController(@Autowired private val lingnanCourseService: Lin
                 }
 
                 this["message"] = "success"
-                this["data"] = lingnanCourseService.importSubjectData(captureTaskDTO);
+                this["data"] = lingnanCourseService.importSubjectData(captureTaskDTO)
             }
 
     /**
