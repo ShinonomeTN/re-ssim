@@ -15,6 +15,8 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 @Service
 public class SettingService {
@@ -72,5 +74,11 @@ public class SettingService {
     @NotNull
     public List<BaseUserInfoDTO> listUsers() {
         return userRepository.findAllDto();
+    }
+
+    public Set<CaterpillarSettings> listSettings(String id){
+        Optional<User> userResult = userRepository.findById(id);
+        if(!userResult.isPresent()) return null;
+        return userResult.get().getCaterpillarSettings();
     }
 }

@@ -3,15 +3,18 @@ package com.shinonometn.re.ssim.controller
 import com.shinonometn.re.ssim.commons.CacheKeys
 import com.shinonometn.re.ssim.models.CaptureTaskDTO
 import com.shinonometn.re.ssim.services.LingnanCourseService
+import com.shinonometn.re.ssim.services.SettingService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.*
 import java.io.File
+import javax.servlet.http.HttpSession
 
 @Controller
 @RequestMapping("/api/mng")
-open class DataManagementController(@Autowired private val lingnanCourseService: LingnanCourseService) {
+open class DataManagementController(@Autowired private val lingnanCourseService: LingnanCourseService,
+                                    @Autowired private val settingService: SettingService) {
 
     /**
      *
@@ -20,7 +23,7 @@ open class DataManagementController(@Autowired private val lingnanCourseService:
      */
     @GetMapping("/term")
     @ResponseBody
-    open fun termList(): MutableMap<String, String> = lingnanCourseService.termList
+    open fun termList(): Map<String, Any> = lingnanCourseService.termList
 
     /**
      *
@@ -29,7 +32,7 @@ open class DataManagementController(@Autowired private val lingnanCourseService:
      */
     @GetMapping("/term", params = ["refresh"])
     @ResponseBody
-    open fun termListRefresh(): MutableMap<String, String> = lingnanCourseService.reloadAndGetTermList()
+    open fun termListRefresh(): Map<String, Any> = lingnanCourseService.reloadAndGetTermList()
 
     /**
      *
@@ -51,7 +54,8 @@ open class DataManagementController(@Autowired private val lingnanCourseService:
     @ResponseBody
     open fun createTask(@RequestParam("termCode") termCode: String) =
             HashMap<String, Any>().apply {
-                if (!lingnanCourseService.termList!!.containsKey(termCode)) {
+                val termList = lingnanCourseService.termList
+                if (!termList.containsKey(termCode)) {
                     this["message"] = "unknown_term_code"
                     this["error"] = "task_create_failed"
                 } else {
@@ -67,8 +71,23 @@ open class DataManagementController(@Autowired private val lingnanCourseService:
      */
     @PostMapping("/task/{id}", params = ["start"])
     @ResponseBody
-    open fun startTask(@PathVariable("id") id: String): CaptureTaskDTO? =
-            lingnanCourseService.startTask(id)
+    open fun startTask(@PathVariable("id") id: String, @RequestParam("profile") profileName: String, session: HttpSession): Any {
+
+        val user = settingService.getUser(session.getAttribute("loginUsername")!! as String)!!
+        if (user.caterpillarSettings == null) return HashMap<String, Any>().apply {
+            this["error"] = "start_task_failed"
+            this["message"] = "user_has_no_profile"
+        }
+
+
+        return lingnanCourseService.startTask(id, user.caterpillarSettings!!.find {
+            it.username == profileName
+        } ?: return HashMap<String, Any>().apply {
+            this["error"] = "start_task_failed"
+            this["message"] = "could_not_get_profile"
+        })
+
+    }
 
     /**
      *
@@ -77,16 +96,30 @@ open class DataManagementController(@Autowired private val lingnanCourseService:
      */
     @PostMapping("/task/{id}", params = ["stop"])
     @ResponseBody
-    open fun stopTask(@PathVariable("id") id: String) = HashMap<String, Any>().apply {
-        val dto = lingnanCourseService.stopTask(id)
-        if (dto == null) {
-            this["error"] = "task_operate_failed"
-            this["message"] = "task_not_registered"
-        } else {
-            this["message"] = "success"
-            this["data"] = dto
-        }
-    }
+    open fun stopTask(@PathVariable("id") id: String) =
+            HashMap<String, Any>().apply {
+                val dto = lingnanCourseService.stopTask(id)
+                if (dto == null) {
+                    this["error"] = "task_operate_failed"
+                    this["message"] = "task_not_registered"
+                } else {
+                    this["message"] = "success"
+                    this["data"] = dto
+                }
+            }
+
+    /**
+     *
+     * Resume task
+     *
+     */
+    @PostMapping("/task/{id}",params = ["resume"])
+    @ResponseBody
+    open fun resumeTask(@PathVariable("id") id: String) =
+            HashMap<String, Any>().apply {
+                this["message"] = "success"
+                this["data"] = lingnanCourseService.resumeTask(id)
+            }
 
     /**
      *

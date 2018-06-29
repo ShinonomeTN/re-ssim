@@ -10,6 +10,7 @@ import com.shinonometn.re.ssim.caterpillar.kingo.pojo.Course;
 import com.shinonometn.re.ssim.commons.CacheKeys;
 import com.shinonometn.re.ssim.models.CaptureTask;
 import com.shinonometn.re.ssim.models.CaptureTaskDTO;
+import com.shinonometn.re.ssim.models.CaterpillarSettings;
 import com.shinonometn.re.ssim.models.CourseEntity;
 import com.shinonometn.re.ssim.repository.CaptureTaskRepository;
 import com.shinonometn.re.ssim.repository.CourseRepository;
@@ -19,7 +20,6 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
@@ -48,19 +48,12 @@ public class LingnanCourseService {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    private final Site site = Site.me()
-            .setDomain("jwgl.lnc.edu.cn")
-            .setTimeOut(5000)
-            .setRetryTimes(3)
-            .setSleepTime(500);
-
     private final SpiderMonitor spiderMonitor;
 
     private final CaptureTaskRepository captureTaskRepository;
     private final CourseRepository courseRepository;
     private final MongoTemplate mongoTemplate;
 
-    private final Properties caterpillarProperties;
     private final TaskExecutor taskExecutor;
 
     private final File tempDir = new File(System.getProperty("user.dir"), "_temp");
@@ -72,19 +65,13 @@ public class LingnanCourseService {
                                 SpiderMonitor spiderMonitor,
                                 CourseRepository courseRepository,
                                 MongoTemplate mongoTemplate,
-                                @Qualifier("caterpillarProperties") Properties caterpillarProperties,
                                 TaskExecutor taskExecutor) {
 
         this.captureTaskRepository = captureTaskRepository;
         this.spiderMonitor = spiderMonitor;
         this.courseRepository = courseRepository;
         this.mongoTemplate = mongoTemplate;
-        this.caterpillarProperties = caterpillarProperties;
         this.taskExecutor = taskExecutor;
-
-        // Setup
-        this.site.setUserAgent(caterpillarProperties.getProperty("user.agent"))
-                .setCharset(caterpillarProperties.getProperty("encoding"));
 
     }
 
@@ -101,7 +88,7 @@ public class LingnanCourseService {
 
         final Map<String, String> capturedResult = new HashMap<>();
 
-        Spider.create(new TermListPageProcessor(site))
+        Spider.create(new TermListPageProcessor(CaterpillarSettings.Companion.createDefaultSite()))
                 .addUrl(KingoUrls.classInfoQueryPage)
                 .addPipeline((r, t) -> capturedResult.putAll(r.get(TermListPageProcessor.FIELD_TERMS)))
                 .run();
@@ -136,7 +123,7 @@ public class LingnanCourseService {
      * @param termCode term code
      * @return created task
      */
-    public CaptureTask createTask(@NotNull String termCode) {
+    public CaptureTask createTask(String termCode) {
         CaptureTask captureTask = new CaptureTask();
         captureTask.setCreateDate(new Date());
         captureTask.setTermCode(termCode);
@@ -164,23 +151,46 @@ public class LingnanCourseService {
     }
 
     /**
-     * Start a capture task by task id
-     * <p>
-     * It will capture all subject info to a temporal folder
      *
-     * @param taskId
-     * @return
+     * Resume a stopped task
+     *
+     * @param taskId task id
+     * @return dto
      */
-    public CaptureTaskDTO startTask(String taskId) {
+    public CaptureTaskDTO resumeTask(String taskId){
         Optional<CaptureTask> captureTaskResult = captureTaskRepository.findById(taskId);
         if (!captureTaskResult.isPresent()) return null;
 
         CaptureTaskDTO dto = captureTaskRepository.findProjectedById(taskId);
 
-        if (dto.getSpiderStatus() != null && dto.getSpiderStatus().getStatus().equals("Running"))
-            throw new IllegalStateException("spider_running");
+        if(dto.getSpiderStatus() == null)
+            throw new IllegalStateException("spider_not_exist");
 
-        if (notLogin() && !doLogin()) throw new IllegalStateException("login_to_kingo_failed");
+        dto.getSpiderStatus().start();
+
+        return dto;
+    }
+
+    /**
+     * Start a capture task by task id
+     * <p>
+     * It will capture all subject info to a temporal folder
+     *
+     * @param taskId task id
+     * @return dto
+     */
+    public CaptureTaskDTO startTask(String taskId, CaterpillarSettings caterpillarSettings) {
+        Optional<CaptureTask> captureTaskResult = captureTaskRepository.findById(taskId);
+        if (!captureTaskResult.isPresent()) return null;
+
+        CaptureTaskDTO dto = captureTaskRepository.findProjectedById(taskId);
+
+        if (dto.getSpiderStatus() != null)
+            throw new IllegalStateException("spider_exist");
+
+        Site site = doLogin(caterpillarSettings);
+
+        if (site == null) throw new IllegalStateException("login_to_kingo_failed");
 
         File tempFolder = getTempDir(taskId);
         Spider spider = Spider.create(new CourseDetailsPageProcessor(site))
@@ -193,10 +203,10 @@ public class LingnanCourseService {
                     }
                 })
                 .setUUID(taskId)
-                .thread(Integer.parseInt(caterpillarProperties.getProperty("threads")));
+                .thread(caterpillarSettings.getThreads());
 
-        spider.startRequest(fetchTermList(captureTaskResult.get().getTermCode()).stream()
-                .map(id -> createSubjectRequest(captureTaskResult.get().getTermCode(), id))
+        spider.startRequest(fetchTermList(site, captureTaskResult.get().getTermCode()).stream()
+                .map(id -> createSubjectRequest(site, captureTaskResult.get().getTermCode(), id))
                 .collect(Collectors.toList()));
 
         spiderMonitor.register(spider);
@@ -210,6 +220,17 @@ public class LingnanCourseService {
         return dto;
     }
 
+
+    /**
+     *
+     * Check if caterpillar setting valid
+     *
+     * @param caterpillarSettings settings
+     * @return result
+     */
+    public boolean isSettingVaild(CaterpillarSettings caterpillarSettings) {
+        return doLogin(caterpillarSettings) != null;
+    }
 
     /**
      * Delete a not running task
@@ -249,7 +270,7 @@ public class LingnanCourseService {
             importingTaskCount.incrementAndGet();
 
             mongoTemplate.getCollection(mongoTemplate.getCollectionName(CourseEntity.class))
-                    .deleteMany(new Document("term",captureTaskDTO.getTermName()));
+                    .deleteMany(new Document("term", captureTaskDTO.getTermName()));
             logger.info("Records of {} deleted. If task failed, it will not be revert.", captureTaskDTO.getTermName());
 
             ArrayList<String> succeedEntity = new ArrayList<>();
@@ -319,8 +340,8 @@ public class LingnanCourseService {
     /**
      * Get task temp dir
      *
-     * @param captureTask
-     * @return
+     * @param captureTask task
+     * @return string path
      */
     public String getTaskDir(CaptureTask captureTask) {
         return new File(tempDir, Objects.requireNonNull(captureTask.getId())).getAbsolutePath();
@@ -343,7 +364,7 @@ public class LingnanCourseService {
 
      */
 
-    private Collection<String> fetchTermList(String termCode) {
+    private Collection<String> fetchTermList(Site site, String termCode) {
         Map<String, String> termList = new HashMap<>();
 
         Spider.create(new CoursesListPageProcessor(site))
@@ -364,7 +385,8 @@ public class LingnanCourseService {
         return file;
     }
 
-    private boolean notLogin() {
+    @Deprecated
+    private boolean notLogin(Site site) {
         synchronized (site) {
             AtomicBoolean isLogin = new AtomicBoolean(false);
 
@@ -381,10 +403,13 @@ public class LingnanCourseService {
         }
     }
 
-    private boolean doLogin() {
-        String username = caterpillarProperties.getProperty("username");
-        String password = caterpillarProperties.getProperty("password");
-        String role = caterpillarProperties.getProperty("role");
+    private Site doLogin(CaterpillarSettings caterpillarSettings) {
+
+        Site site = caterpillarSettings.createSite();
+
+        String username = caterpillarSettings.getUsername();
+        String password = caterpillarSettings.getPassword();
+        String role = caterpillarSettings.getRole();
 
         Map<String, Object> items = new HashMap<>();
 
@@ -404,7 +429,7 @@ public class LingnanCourseService {
                         .flatMap(s -> Stream.of(new String[][]{s.split("=")}))
                         .collect(Collectors.toMap(ss -> ss[0], ss -> ss[1]));
 
-                this.site.addCookie("ASP.NET_SessionId", cookies.get("ASP.NET_SessionId"));
+                site.addCookie("ASP.NET_SessionId", cookies.get("ASP.NET_SessionId"));
             }
 
             Map<String, Object> formFields = (Map<String, Object>) items.get("formFields");
@@ -413,7 +438,7 @@ public class LingnanCourseService {
             loginRequest.setMethod(HttpConstant.Method.POST);
             loginRequest.addHeader("Content-Type", "application/x-www-form-urlencoded");
             loginRequest.addHeader("Referer", KingoUrls.loginPageAddress);
-            loginRequest.setRequestBody(HttpRequestBody.form(formFields, caterpillarProperties.getProperty("encoding")));
+            loginRequest.setRequestBody(HttpRequestBody.form(formFields, caterpillarSettings.getEncoding()));
 
 
             Spider.create(new LoginExecutePageProcessor(site))
@@ -426,11 +451,11 @@ public class LingnanCourseService {
         logger.debug("Login to kingo {}.", (loginResult.get() ? "successful" : "failed"));
 
 
-        return loginResult.get();
+        return loginResult.get() ? site : null;
 
     }
 
-    private Request createSubjectRequest(String termCode, String subjectCode) {
+    private Request createSubjectRequest(Site site, String termCode, String subjectCode) {
         Map<String, Object> form = new HashMap<>();
         form.put("gs", "2");
         form.put("txt_yzm", "");
