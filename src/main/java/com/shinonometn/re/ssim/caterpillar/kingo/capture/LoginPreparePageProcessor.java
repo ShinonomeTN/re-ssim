@@ -4,6 +4,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.nodes.FormElement;
 import org.jsoup.select.Elements;
 import us.codecraft.webmagic.Page;
+import us.codecraft.webmagic.ResultItems;
 import us.codecraft.webmagic.Site;
 import us.codecraft.webmagic.processor.PageProcessor;
 
@@ -11,14 +12,16 @@ import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class LoginPreparePageProcessor implements PageProcessor {
 
     private final String username;
     private final String password;
     private final String role;
-
 
     private final Site site;
 
@@ -81,6 +84,33 @@ public class LoginPreparePageProcessor implements PageProcessor {
     @Override
     public Site getSite() {
         return site;
+    }
+
+    private static final String FIELD_IS_READY = "ready";
+    private static final String FIELD_FROM_FIELDS = "formFields";
+    private static final String FIELD_COOKIES = "cookies";
+
+    @SuppressWarnings("unchecked")
+    public static Boolean getIsReady(Map<String,Object> resultItems) {
+        return (Boolean) resultItems.getOrDefault(FIELD_IS_READY, false);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static Map<String, Object> getFormFields(Map<String,Object> resultItems) {
+        return (Map<String, Object>) resultItems.get(FIELD_FROM_FIELDS);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static Map<String, String> getCookie(Map<String,Object> resultItems) {
+        List<String> cookies = (List<String>) resultItems.get(FIELD_COOKIES);
+
+        if(cookies == null) return null;
+
+        return cookies
+                .stream()
+                .flatMap(s -> Stream.of(s.split(";")))
+                .flatMap(s -> Stream.of(new String[][]{s.split("=")}))
+                .collect(Collectors.toMap(ss -> ss[0], ss -> ss[1]));
     }
 
     /*

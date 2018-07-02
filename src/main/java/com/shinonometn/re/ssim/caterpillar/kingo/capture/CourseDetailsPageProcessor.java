@@ -2,11 +2,9 @@ package com.shinonometn.re.ssim.caterpillar.kingo.capture;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shinonometn.re.ssim.caterpillar.kingo.KingoRawCourseParser;
+import com.shinonometn.re.ssim.caterpillar.kingo.pojo.Course;
 import org.jsoup.nodes.Document;
-import us.codecraft.webmagic.Page;
-import us.codecraft.webmagic.Request;
-import us.codecraft.webmagic.Site;
-import us.codecraft.webmagic.Spider;
+import us.codecraft.webmagic.*;
 import us.codecraft.webmagic.model.HttpRequestBody;
 import us.codecraft.webmagic.processor.PageProcessor;
 import us.codecraft.webmagic.utils.HttpConstant;
@@ -30,12 +28,17 @@ public class CourseDetailsPageProcessor implements PageProcessor {
     @Override
     public void process(Page page) {
         Document document = page.getHtml().getDocument();
-        page.putField("subject", KingoRawCourseParser.parseFromHTML(document));
+        page.putField(FIELD_SUBJECT, KingoRawCourseParser.parseFromHTML(document));
     }
 
     @Override
     public Site getSite() {
         return site;
+    }
+
+    private final static String FIELD_SUBJECT = "subject";
+    public static Course getSubject(ResultItems resultItems){
+        return resultItems.get(FIELD_SUBJECT);
     }
 
     public static void main(String[] args) {

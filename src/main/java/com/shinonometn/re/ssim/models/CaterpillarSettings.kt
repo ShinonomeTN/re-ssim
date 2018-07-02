@@ -9,7 +9,7 @@ class CaterpillarSettings {
     var role: String? = null
     var userAgent: String? = null
     var encoding: String? = null
-    var threads: Int? = null
+    var threads: Int = 1
     var public: Boolean = false
 
 

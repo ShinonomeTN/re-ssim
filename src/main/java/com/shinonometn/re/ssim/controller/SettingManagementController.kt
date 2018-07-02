@@ -89,7 +89,7 @@ class SettingManagementController(@Autowired private val settingService: Setting
     @ResponseBody
     fun checkSettings(@RequestBody caterpillarSettings: CaterpillarSettings) =
             HashMap<String,Any>(2).apply {
-                if(lingnanCourseService.isSettingVaild(caterpillarSettings)){
+                if(lingnanCourseService.isSettingValid(caterpillarSettings)){
                     this["message"] = "setting_is_valid"
                 }else{
                     this["error"] = "setting_not_valid"

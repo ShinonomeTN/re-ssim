@@ -90,7 +90,7 @@ public class LingnanCourseService {
 
         Spider.create(new TermListPageProcessor(CaterpillarSettings.Companion.createDefaultSite()))
                 .addUrl(KingoUrls.classInfoQueryPage)
-                .addPipeline((r, t) -> capturedResult.putAll(r.get(TermListPageProcessor.FIELD_TERMS)))
+                .addPipeline((r, t) -> capturedResult.putAll(TermListPageProcessor.getTerms(r)))
                 .run();
 
         logger.debug("Cache not found, returning remote data.");
@@ -151,19 +151,18 @@ public class LingnanCourseService {
     }
 
     /**
-     *
      * Resume a stopped task
      *
      * @param taskId task id
      * @return dto
      */
-    public CaptureTaskDTO resumeTask(String taskId){
+    public CaptureTaskDTO resumeTask(String taskId) {
         Optional<CaptureTask> captureTaskResult = captureTaskRepository.findById(taskId);
         if (!captureTaskResult.isPresent()) return null;
 
         CaptureTaskDTO dto = captureTaskRepository.findProjectedById(taskId);
 
-        if(dto.getSpiderStatus() == null)
+        if (dto.getSpiderStatus() == null)
             throw new IllegalStateException("spider_not_exist");
 
         dto.getSpiderStatus().start();
@@ -190,14 +189,14 @@ public class LingnanCourseService {
 
         Site site = doLogin(caterpillarSettings);
 
-        if (site == null) throw new IllegalStateException("login_to_kingo_failed");
-
         File tempFolder = getTempDir(taskId);
         Spider spider = Spider.create(new CourseDetailsPageProcessor(site))
                 .addPipeline((resultItems, task) -> {
                     try {
-                        Course course = resultItems.get("subject");
-                        objectMapper.writeValue(new FileOutputStream(new File(tempFolder, Objects.requireNonNull(course.getCode()))), course);
+                        Course course = CourseDetailsPageProcessor.getSubject(resultItems);
+                        objectMapper.writeValue(
+                                new FileOutputStream(new File(tempFolder, Objects.requireNonNull(course.getCode()))),
+                                course);
                     } catch (Exception ignore) {
 
                     }
@@ -222,13 +221,12 @@ public class LingnanCourseService {
 
 
     /**
-     *
      * Check if caterpillar setting valid
      *
      * @param caterpillarSettings settings
      * @return result
      */
-    public boolean isSettingVaild(CaterpillarSettings caterpillarSettings) {
+    public boolean isSettingValid(CaterpillarSettings caterpillarSettings) {
         return doLogin(caterpillarSettings) != null;
     }
 
@@ -358,6 +356,18 @@ public class LingnanCourseService {
         return spiderMonitor.getSpiderStatus().get(captureTask.getId());
     }
 
+    /**
+     *
+     * Get a task dto by id
+     *
+     * @param id id
+     * @return dto
+     */
+    @Nullable
+    public CaptureTaskDTO queryTask(@NotNull String id) {
+        return captureTaskRepository.findProjectedById(id);
+    }
+
     /*
 
       Private procedure
@@ -369,7 +379,7 @@ public class LingnanCourseService {
 
         Spider.create(new CoursesListPageProcessor(site))
                 .addUrl(KingoUrls.subjectListQueryPath + termCode)
-                .addPipeline((resultItems, task) -> termList.putAll(resultItems.get("courses")))
+                .addPipeline((resultItems, task) -> termList.putAll(CoursesListPageProcessor.getCourseList(resultItems)))
                 .run();
 
         logger.debug("Fetched remote course list of term {}.", termCode);
@@ -387,20 +397,19 @@ public class LingnanCourseService {
 
     @Deprecated
     private boolean notLogin(Site site) {
-        synchronized (site) {
-            AtomicBoolean isLogin = new AtomicBoolean(false);
+        AtomicBoolean isLogin = new AtomicBoolean(false);
 
-            Request request = new Request(KingoUrls.classInfoQueryPage);
-            request.addHeader("Referer", KingoUrls.classInfoQueryPage);
+        Request request = new Request(KingoUrls.classInfoQueryPage);
+        request.addHeader("Referer", KingoUrls.classInfoQueryPage);
 
-            Spider.create(new LoginStatusPageProcessor(site))
-                    .addRequest(request)
-                    .addPipeline((resultItems, task) -> isLogin.set(resultItems.get("isLogin"))).run();
+        Spider.create(new LoginStatusPageProcessor(site))
+                .addRequest(request)
+                .addPipeline((resultItems, task) -> isLogin.set(LoginStatusPageProcessor.getIsLogin(resultItems)))
+                .run();
 
-            logger.debug("Login status {}", isLogin.get() ? "valid" : "invalid");
+        logger.debug("Login status {}", isLogin.get() ? "valid" : "invalid");
 
-            return !isLogin.get();
-        }
+        return !isLogin.get();
     }
 
     private Site doLogin(CaterpillarSettings caterpillarSettings) {
@@ -411,6 +420,7 @@ public class LingnanCourseService {
         String password = caterpillarSettings.getPassword();
         String role = caterpillarSettings.getRole();
 
+
         Map<String, Object> items = new HashMap<>();
 
         Spider.create(new LoginPreparePageProcessor(username, password, role, site))
@@ -420,38 +430,29 @@ public class LingnanCourseService {
 
         AtomicBoolean loginResult = new AtomicBoolean(false);
 
-        if ((Boolean) items.get("ready")) {
+        if (!LoginPreparePageProcessor.getIsReady(items)) throw new IllegalStateException("could_not_get_login_form");
 
-            if (items.get("cookies") != null) {
-                Map<String, String> cookies = ((List<String>) items.get("cookies"))
-                        .stream()
-                        .flatMap(s -> Stream.of(s.split(";")))
-                        .flatMap(s -> Stream.of(new String[][]{s.split("=")}))
-                        .collect(Collectors.toMap(ss -> ss[0], ss -> ss[1]));
+        Map<String, String> cookies = LoginPreparePageProcessor.getCookie(items);
+        if (cookies != null) site.addCookie("ASP.NET_SessionId", cookies.get("ASP.NET_SessionId"));
 
-                site.addCookie("ASP.NET_SessionId", cookies.get("ASP.NET_SessionId"));
-            }
+        Map<String, Object> formFields = LoginPreparePageProcessor.getFormFields(items);
 
-            Map<String, Object> formFields = (Map<String, Object>) items.get("formFields");
-
-            Request loginRequest = new Request(KingoUrls.loginPageAddress);
-            loginRequest.setMethod(HttpConstant.Method.POST);
-            loginRequest.addHeader("Content-Type", "application/x-www-form-urlencoded");
-            loginRequest.addHeader("Referer", KingoUrls.loginPageAddress);
-            loginRequest.setRequestBody(HttpRequestBody.form(formFields, caterpillarSettings.getEncoding()));
+        Request loginRequest = new Request(KingoUrls.loginPageAddress);
+        loginRequest.setMethod(HttpConstant.Method.POST);
+        loginRequest.addHeader("Content-Type", "application/x-www-form-urlencoded");
+        loginRequest.addHeader("Referer", KingoUrls.loginPageAddress);
+        loginRequest.setRequestBody(HttpRequestBody.form(formFields, Objects.requireNonNull(caterpillarSettings.getEncoding())));
 
 
-            Spider.create(new LoginExecutePageProcessor(site))
-                    .addRequest(loginRequest)
-                    .addPipeline((resultItems, task) -> loginResult.set(resultItems.get("loginResult")))
-                    .run();
-
-        }
+        Spider.create(new LoginExecutePageProcessor(site))
+                .addRequest(loginRequest)
+                .addPipeline((resultItems, task) -> loginResult.set(LoginExecutePageProcessor.getIsLogin(resultItems)))
+                .run();
 
         logger.debug("Login to kingo {}.", (loginResult.get() ? "successful" : "failed"));
+        if (!loginResult.get()) throw new IllegalStateException("login_to_kingo_failed");
 
-
-        return loginResult.get() ? site : null;
+        return site;
 
     }
 
@@ -469,10 +470,5 @@ public class LingnanCourseService {
 
         return request;
 
-    }
-
-    @Nullable
-    public CaptureTaskDTO queryTask(@NotNull String id) {
-        return captureTaskRepository.findProjectedById(id);
     }
 }

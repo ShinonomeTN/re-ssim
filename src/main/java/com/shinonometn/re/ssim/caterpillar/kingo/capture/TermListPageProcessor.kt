@@ -2,6 +2,7 @@ package com.shinonometn.re.ssim.caterpillar.kingo.capture
 
 import org.jsoup.nodes.Element
 import us.codecraft.webmagic.Page
+import us.codecraft.webmagic.ResultItems
 import us.codecraft.webmagic.Site
 import us.codecraft.webmagic.processor.PageProcessor
 import java.util.function.Function
@@ -11,6 +12,11 @@ class TermListPageProcessor(private val site: Site) : PageProcessor {
 
     companion object {
         const val FIELD_TERMS = "terms"
+
+        @JvmStatic
+        fun getTerms(resultItems: ResultItems) : Map<String,String> {
+            return resultItems.get(FIELD_TERMS)
+        }
     }
 
     override fun process(page: Page) {

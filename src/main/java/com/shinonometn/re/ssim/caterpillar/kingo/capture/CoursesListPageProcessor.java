@@ -3,10 +3,11 @@ package com.shinonometn.re.ssim.caterpillar.kingo.capture;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import us.codecraft.webmagic.Page;
+import us.codecraft.webmagic.ResultItems;
 import us.codecraft.webmagic.Site;
-import us.codecraft.webmagic.Spider;
 import us.codecraft.webmagic.processor.PageProcessor;
 
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class CoursesListPageProcessor implements PageProcessor {
@@ -30,7 +31,7 @@ public class CoursesListPageProcessor implements PageProcessor {
         String scriptContent = scriptElement.html();
         String script = scriptContent.substring(scriptContent.indexOf("<"), scriptContent.lastIndexOf(">"));
 
-        page.putField("courses", Jsoup.parse(script)
+        page.putField(FIELD_COURSE_LIST, Jsoup.parse(script)
                 .select("select")
                 .first()
                 .children()
@@ -46,5 +47,10 @@ public class CoursesListPageProcessor implements PageProcessor {
 
     public Site getSite() {
         return site;
+    }
+
+    private final static String FIELD_COURSE_LIST = "courses";
+    public static Map<String, String> getCourseList(ResultItems resultItems) {
+        return resultItems.get(FIELD_COURSE_LIST);
     }
 }
