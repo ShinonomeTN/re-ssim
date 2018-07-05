@@ -47,10 +47,8 @@ constructor(private val courseInfoService: CourseInfoService) {
                             .and("lessons.classType").`as`("classType"),
                     match(Criteria.where("term").`is`(termName)),
                     unwind("lessons"),
-                    group("code", "name", "unit", "classType")
-                            .count().`as`("courseCount"),
                     unwind("classType"),
-                    group("code", "name", "unit", "classType", "courseCount", "assessmentType")
+                    group("code", "name", "unit", "classType", "assessmentType")
             )).mappedResults
 
     /**
