@@ -26,3 +26,4 @@ logging:
 #    org.apache.http.headers: debug
 #    org.apache.http.wire : debug
     org.apache.coyote.http11.Http11Processor : debug
+    org.springframework.data.mongodb.core.MongoTemplate : DEBUG

@@ -39,6 +39,10 @@ class CourseQueryController(@Autowired private val courseInfoService: CourseInfo
                     // Find lessons matched given week
                     match(where("lessons.timePoint.week").`is`(week)),
 
+                    // Find right lessons that matched given class
+                    unwind("lessons.classAttend"),
+                    match(where("lessons.classAttend").`is`(clazz)),
+
                     // Group up by timePoint
                     group("lessons.timePoint")
                             // Here use raw query
