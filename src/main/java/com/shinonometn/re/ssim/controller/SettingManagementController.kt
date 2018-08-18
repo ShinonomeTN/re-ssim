@@ -4,7 +4,7 @@ import com.shinonometn.re.ssim.models.BaseUserInfoDTO
 import com.shinonometn.re.ssim.models.CaterpillarSettings
 import com.shinonometn.re.ssim.models.User
 import com.shinonometn.re.ssim.services.LingnanCourseService
-import com.shinonometn.re.ssim.services.SettingService
+import com.shinonometn.re.ssim.services.ManagementService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.*
@@ -12,14 +12,14 @@ import javax.servlet.http.HttpSession
 
 @Controller
 @RequestMapping("/api/mng")
-class SettingManagementController(@Autowired private val settingService: SettingService,
+class SettingManagementController(@Autowired private val managementService: ManagementService,
                                   @Autowired private val lingnanCourseService: LingnanCourseService) {
 
     @PostMapping("/login")
     @ResponseBody
     fun login(@RequestBody loginForm: LoginForm, session: HttpSession) =
             HashMap<String, Any>(2).apply {
-                if (!settingService.checkToken(loginForm.username, loginForm.password)) {
+                if (!managementService.checkToken(loginForm.username, loginForm.password)) {
                     this["error"] = "login_failed"
                     this["message"] = "unknown_user"
                 } else {
@@ -40,11 +40,11 @@ class SettingManagementController(@Autowired private val settingService: Setting
     @ResponseBody
     fun createUser(@RequestBody loginForm: LoginForm) =
             HashMap<String, Any>(2).apply {
-                if (settingService.getUser(loginForm.username) != null) {
+                if (managementService.getUser(loginForm.username) != null) {
                     this["error"] = "create_user_failed"
                     this["message"] = "user_exist"
                 } else {
-                    settingService.saveUser(User().apply {
+                    managementService.saveUser(User().apply {
                         username = loginForm.username
                         password = loginForm.password
                     })
@@ -57,7 +57,7 @@ class SettingManagementController(@Autowired private val settingService: Setting
     @ResponseBody
     fun deleteUser(@PathVariable("id") id: String) =
             HashMap<String, Any>(1).apply {
-                settingService.removeUser(id)
+                managementService.removeUser(id)
                 this["message"] = "success"
             }
 
@@ -69,7 +69,7 @@ class SettingManagementController(@Autowired private val settingService: Setting
                     this["error"] = "save_user_error"
                     this["message"] = "user_not_exist"
                 } else {
-                    settingService.saveUser(user)
+                    managementService.saveUser(user)
                     this["message"] = "success"
                     this["data"] = user
                 }
@@ -78,12 +78,12 @@ class SettingManagementController(@Autowired private val settingService: Setting
     @GetMapping("/settings/user")
     @ResponseBody
     fun listUser(): List<BaseUserInfoDTO> =
-            settingService.listUsers()
+            managementService.listUsers()
 
     @GetMapping("/settings/user/{id}/profiles")
     @ResponseBody
     fun listSettings(@PathVariable("id")id : String): Set<CaterpillarSettings>? =
-            settingService.listSettings(id)
+            managementService.listSettings(id)
 
     @PostMapping("/settings/caterpillar",params = ["settingValidate"])
     @ResponseBody

@@ -19,7 +19,7 @@ import java.util.Optional;
 import java.util.Set;
 
 @Service
-public class SettingService {
+public class ManagementService {
 
     private final Logger logger = LoggerFactory.getLogger("com.shinonometn.re.ssim.management");
 
@@ -27,7 +27,7 @@ public class SettingService {
     private final MongoTemplate mongoTemplate;
 
     @Autowired
-    public SettingService(UserRepository userRepository, MongoTemplate mongoTemplate) {
+    public ManagementService(UserRepository userRepository, MongoTemplate mongoTemplate) {
         this.userRepository = userRepository;
         this.mongoTemplate = mongoTemplate;
 
@@ -78,7 +78,6 @@ public class SettingService {
 
     public Set<CaterpillarSettings> listSettings(String id){
         Optional<User> userResult = userRepository.findById(id);
-        if(!userResult.isPresent()) return null;
-        return userResult.get().getCaterpillarSettings();
+        return userResult.map(User::getCaterpillarSettings).orElse(null);
     }
 }

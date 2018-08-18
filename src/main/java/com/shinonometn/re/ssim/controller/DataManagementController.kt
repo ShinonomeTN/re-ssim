@@ -1,11 +1,10 @@
 package com.shinonometn.re.ssim.controller
 
-import com.shinonometn.re.ssim.commons.CacheKeys
 import com.shinonometn.re.ssim.models.CaptureTaskDTO
 import com.shinonometn.re.ssim.services.LingnanCourseService
-import com.shinonometn.re.ssim.services.SettingService
+import com.shinonometn.re.ssim.services.ManagementService
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.cache.annotation.CacheEvict
+import org.springframework.cache.CacheManager
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.*
 import java.io.File
@@ -14,7 +13,8 @@ import javax.servlet.http.HttpSession
 @Controller
 @RequestMapping("/api/mng")
 open class DataManagementController(@Autowired private val lingnanCourseService: LingnanCourseService,
-                                    @Autowired private val settingService: SettingService) {
+                                    @Autowired private val managementService: ManagementService,
+                                    @Autowired private val cacheManager: CacheManager) {
 
     /**
      *
@@ -73,7 +73,7 @@ open class DataManagementController(@Autowired private val lingnanCourseService:
     @ResponseBody
     open fun startTask(@PathVariable("id") id: String, @RequestParam("profile") profileName: String, session: HttpSession): Any {
 
-        val user = settingService.getUser(session.getAttribute("loginUsername")!! as String)!!
+        val user = managementService.getUser(session.getAttribute("loginUsername")!! as String)!!
         if (user.caterpillarSettings == null) return HashMap<String, Any>().apply {
             this["error"] = "start_task_failed"
             this["message"] = "user_has_no_profile"
@@ -113,7 +113,7 @@ open class DataManagementController(@Autowired private val lingnanCourseService:
      * Resume task
      *
      */
-    @PostMapping("/task/{id}",params = ["resume"])
+    @PostMapping("/task/{id}", params = ["resume"])
     @ResponseBody
     open fun resumeTask(@PathVariable("id") id: String) =
             HashMap<String, Any>().apply {
@@ -204,18 +204,9 @@ open class DataManagementController(@Autowired private val lingnanCourseService:
      */
     @PostMapping("/cache", params = ["clear"])
     @ResponseBody
-    @CacheEvict(
-            CacheKeys.CAPTURE_TERM_LIST,
-            CacheKeys.TERM_LIST,
-            CacheKeys.TERM_TEACHER_LIST,
-            CacheKeys.TERM_CLASS_LIST,
-            CacheKeys.TERM_COURSE_LIST,
-            CacheKeys.TERM_WEEK_RANGE,
-            CacheKeys.TERM_CLASS_TYPE,
-            CacheKeys.TERM_CLASSROOM,
-            allEntries = true)
     open fun clearCache() =
-            HashMap<String, Any>().apply {
-                this["message"] = "success"
-            }
+            cacheManager.cacheNames
+                    .map { cacheManager.getCache(it) }
+                    .filter { it != null }
+                    .forEach { it?.clear() }
 }

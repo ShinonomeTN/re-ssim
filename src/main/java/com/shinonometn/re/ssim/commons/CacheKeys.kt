@@ -12,4 +12,6 @@ object CacheKeys {
     const val TERM_WEEK_RANGE = "ressim.week_range"
     const val TERM_CLASS_TYPE="ressim.class_type"
     const val TERM_CLASSROOM="ressim.classroom"
+
+    const val SERVER_STATUS_COURSES_COUNT = "server.course_count"
 }
