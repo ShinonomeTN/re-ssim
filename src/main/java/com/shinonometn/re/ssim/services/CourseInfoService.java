@@ -23,6 +23,11 @@ public class CourseInfoService {
         this.courseRepository = courseRepository;
     }
 
+    /**
+     * Is server has course data
+     *
+     * @return
+     */
     @Cacheable(CacheKeys.SERVER_STATUS_COURSES_COUNT)
     public Boolean hasData(){
         return courseRepository.count() > 0;

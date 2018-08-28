@@ -12,6 +12,29 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping("/api/term")
 class CourseQueryController(@Autowired private val courseInfoService: CourseInfoService) {
 
+    /**
+     *
+     * Query weeks of a class that has lessons
+     *
+     */
+    @GetMapping("/{term}/{clazzName}", params = ["weeks"])
+    @ResponseBody
+    fun showClassTermWeeks(@PathVariable("term") term: String,
+                           @PathVariable("clazzName") clazz: String): Any? =
+            courseInfoService.executeAggregation(newAggregation(
+                    project("term", "code", "name", "lessons"),
+
+                    match(where("term").`is`(term)
+                            .and("lessons.classAttend").`in`(clazz)),
+
+                    unwind("lessons"),
+                    unwind("lessons.timePoint"),
+
+                    group().addToSet("lessons.timePoint.week").`as`("weeks"),
+
+                    project("weeks").andExclude("_id")
+            )).uniqueMappedResult
+
     @GetMapping("/{term}/course", params = ["class", "week"])
     @ResponseBody
     fun queryClassWeekCourses(@PathVariable("term") term: String,
