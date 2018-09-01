@@ -12,6 +12,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -19,7 +22,7 @@ import java.util.Optional;
 import java.util.Set;
 
 @Service
-public class ManagementService {
+public class ManagementService implements UserDetailsService{
 
     private final Logger logger = LoggerFactory.getLogger("com.shinonometn.re.ssim.management");
 
@@ -79,5 +82,10 @@ public class ManagementService {
     public Set<CaterpillarSettings> listSettings(String id){
         Optional<User> userResult = userRepository.findById(id);
         return userResult.map(User::getCaterpillarSettings).orElse(null);
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        return null;
     }
 }
