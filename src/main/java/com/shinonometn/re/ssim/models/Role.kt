@@ -11,5 +11,7 @@ class Role {
 
     var name: String? = null
 
-    var permissionList : MutableList<AttributeGrantedAuthority>? = null
+    var enabled: Boolean = true
+
+    var grantedPermission: MutableList<GrantedPermission>? = null
 }

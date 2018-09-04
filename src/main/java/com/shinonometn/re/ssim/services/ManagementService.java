@@ -1,6 +1,9 @@
 package com.shinonometn.re.ssim.services;
 
-import com.shinonometn.re.ssim.models.*;
+import com.shinonometn.re.ssim.models.BaseUserInfoDTO;
+import com.shinonometn.re.ssim.models.CaterpillarSettings;
+import com.shinonometn.re.ssim.models.Role;
+import com.shinonometn.re.ssim.models.User;
 import com.shinonometn.re.ssim.repository.RoleRepository;
 import com.shinonometn.re.ssim.repository.UserRepository;
 import org.jetbrains.annotations.NotNull;
@@ -11,19 +14,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
-public class ManagementService implements UserDetailsService{
+public class ManagementService{
 
     private final Logger logger = LoggerFactory.getLogger("com.shinonometn.re.ssim.management");
 
@@ -90,27 +88,27 @@ public class ManagementService implements UserDetailsService{
         return userResult.map(User::getCaterpillarSettings).orElse(null);
     }
 
-    @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.getByUsername(username);
-        if(user == null) throw new UsernameNotFoundException("No user named "+ username + ".");
-
-        UserDetailsDTO userDetailsDTO = new UserDetailsDTO(user);
-
-        if(user.getRoles() == null) {
-            userDetailsDTO.setAttributeGrantedAuthorities(new ArrayList<>());
-            return userDetailsDTO;
-        }
-
-        List<Role> roles = roleRepository.findAllByName(user.getRoles());
-        userDetailsDTO.setAttributeGrantedAuthorities(roles
-                .stream()
-                .filter(role -> role.getPermissionList() != null && role.getPermissionList().size() > 0)
-                .flatMap(role -> role.getPermissionList().stream())
-                .collect(Collectors.toList()));
-
-        return userDetailsDTO;
-    }
+//    @Override
+//    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+//        User user = userRepository.getByUsername(username);
+//        if(user == null) throw new UsernameNotFoundException("No user named "+ username + ".");
+//
+//        UserDetailsDTO userDetailsDTO = new UserDetailsDTO(user);
+//
+//        if(user.getRoles() == null) {
+//            userDetailsDTO.setAttributeGrantedAuthorities(new ArrayList<>());
+//            return userDetailsDTO;
+//        }
+//
+//        List<Role> roles = roleRepository.findAllByName(user.getRoles());
+//        userDetailsDTO.setAttributeGrantedAuthorities(roles
+//                .stream()
+//                .filter(role -> role.getPermissionList() != null && role.getPermissionList().size() > 0)
+//                .flatMap(role -> role.getPermissionList().stream())
+//                .collect(Collectors.toList()));
+//
+//        return userDetailsDTO;
+//    }
 
     /*
     *
