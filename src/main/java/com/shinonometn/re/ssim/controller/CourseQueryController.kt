@@ -24,11 +24,11 @@ class CourseQueryController(@Autowired private val courseInfoService: CourseInfo
             courseInfoService.executeAggregation(newAggregation(
                     project("term", "code", "name", "lessons"),
 
-                    match(where("term").`is`(term)
-                            .and("lessons.classAttend").`in`(clazz)),
-
                     unwind("lessons"),
                     unwind("lessons.timePoint"),
+
+                    match(where("term").`is`(term)
+                            .and("lessons.classAttend").`in`(clazz)),
 
                     group().addToSet("lessons.timePoint.week").`as`("weeks"),
 
