@@ -1,8 +1,12 @@
-package com.shinonometn.re.ssim.controller
+package com.shinonometn.re.ssim.controller.management
 
+import com.shinonometn.re.ssim.commons.session.HttpSessionWrapper
+import com.shinonometn.re.ssim.commons.session.SessionWrapper
 import com.shinonometn.re.ssim.models.BaseUserInfoDTO
 import com.shinonometn.re.ssim.models.CaterpillarSettings
 import com.shinonometn.re.ssim.models.User
+import com.shinonometn.re.ssim.security.AuthorityRequired
+import com.shinonometn.re.ssim.security.UserDetailsSource
 import com.shinonometn.re.ssim.services.LingnanCourseService
 import com.shinonometn.re.ssim.services.ManagementService
 import org.springframework.beans.factory.annotation.Autowired
@@ -13,7 +17,8 @@ import javax.servlet.http.HttpSession
 @Controller
 @RequestMapping("/api/mng")
 class SettingManagementController(@Autowired private val managementService: ManagementService,
-                                  @Autowired private val lingnanCourseService: LingnanCourseService) {
+                                  @Autowired private val lingnanCourseService: LingnanCourseService,
+                                  @Autowired private val userDetailsSource: UserDetailsSource) {
 
     @PostMapping("/login")
     @ResponseBody
@@ -23,7 +28,7 @@ class SettingManagementController(@Autowired private val managementService: Mana
                     this["error"] = "login_failed"
                     this["message"] = "unknown_user"
                 } else {
-                    session.setAttribute("loginUsername", loginForm.username)
+                    HttpSessionWrapper(session).userDetails = userDetailsSource.getUserDetailsByUsername(loginForm.username)
                     this["message"] = "success"
                 }
             }
@@ -32,12 +37,13 @@ class SettingManagementController(@Autowired private val managementService: Mana
     @ResponseBody
     fun logout(session: HttpSession) =
             HashMap<String, Any>(1).apply {
-                session.removeAttribute("loginUsername")
+                HttpSessionWrapper(session).userDetails = null
                 this["message"] = "success"
             }
 
     @PutMapping("/settings/user")
     @ResponseBody
+    @AuthorityRequired(name = "user:create", group = "User management", description = "Create an user.")
     fun createUser(@RequestBody loginForm: LoginForm) =
             HashMap<String, Any>(2).apply {
                 if (managementService.getUser(loginForm.username) != null) {
@@ -55,6 +61,7 @@ class SettingManagementController(@Autowired private val managementService: Mana
 
     @DeleteMapping("/settings/user/{id}")
     @ResponseBody
+    @AuthorityRequired(name = "user:delete", group = "User management", description = "Delete an user.")
     fun deleteUser(@PathVariable("id") id: String) =
             HashMap<String, Any>(1).apply {
                 managementService.removeUser(id)
@@ -63,6 +70,7 @@ class SettingManagementController(@Autowired private val managementService: Mana
 
     @PutMapping("/settings/user",params = ["update"])
     @ResponseBody
+    @AuthorityRequired(name = "user:update", group = "User management", description = "Update an existed user.")
     fun saveUser(@RequestBody user: User) =
             HashMap<String, Any>(1).apply {
                 if (user.id == null) {
@@ -77,16 +85,19 @@ class SettingManagementController(@Autowired private val managementService: Mana
 
     @GetMapping("/settings/user")
     @ResponseBody
+    @AuthorityRequired(name = "user_list:get", group = "User management", description = "List all user.")
     fun listUser(): List<BaseUserInfoDTO> =
             managementService.listUsers()
 
     @GetMapping("/settings/user/{id}/profiles")
     @ResponseBody
-    fun listSettings(@PathVariable("id")id : String): Set<CaterpillarSettings>? =
+    @AuthorityRequired(name = "user.caterpillar_settings:get", group = "Caterpillar Settings", description = "List user caterpillar settings.")
+    fun listUserCaterpillarSettings(@PathVariable("id")id : String): Set<CaterpillarSettings>? =
             managementService.listSettings(id)
 
     @PostMapping("/settings/caterpillar",params = ["settingValidate"])
     @ResponseBody
+    @AuthorityRequired(name = "user.caterpillar_settings:validate", group = "Caterpillar Settings", description = "Validate a caterpillar setting.")
     fun checkSettings(@RequestBody caterpillarSettings: CaterpillarSettings) =
             HashMap<String,Any>(2).apply {
                 if(lingnanCourseService.isSettingValid(caterpillarSettings)){

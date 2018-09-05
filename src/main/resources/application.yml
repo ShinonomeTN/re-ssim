@@ -30,8 +30,8 @@ logging:
 #    root : debug
 #    org.apache.http.headers: debug
 #    org.apache.http.wire : debug
-    org.apache.coyote.http11.Http11Processor : debug
-    org.springframework.data.mongodb.core.MongoTemplate : DEBUG
+#    org.apache.coyote.http11.Http11Processor : DEBUG
+#    org.springframework.data.mongodb.core.MongoTemplate : DEBUG
 
     com.shinonometn.ssim.lingnanCourse : DEBUG # Lingnan Courses Service
     com.shinonometn.re.ssim.management : DEBUG # Management Service

@@ -15,5 +15,7 @@ object CacheKeys {
 
     const val SERVER_STATUS_COURSES_COUNT = "server.course_count"
 
+    const val WEBSITE_API_VISIT_COUNT = "website.api.invoke.count"
+
     const val SECURITY_ROLE_INFO = "security.role"
 }

@@ -22,7 +22,7 @@ public class ApiPermissionInterceptor extends HandlerInterceptorAdapter {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
 
-        if (!(handler instanceof HandlerMethod)) return false;
+        if (!(handler instanceof HandlerMethod)) return true;
 
         if (decide((HandlerMethod) handler, new HttpSessionWrapper(request.getSession()))) return true;
 

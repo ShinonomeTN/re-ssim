@@ -14,43 +14,45 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.interceptor.KeyGenerator;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 @Service
-public class ManagementService{
+public class ManagementService {
 
     private final Logger logger = LoggerFactory.getLogger("com.shinonometn.re.ssim.management");
 
-    private final UserRepository userRepository;
     private final MongoTemplate mongoTemplate;
+    private final StringRedisTemplate stringRedisTemplate;
+
+    private final UserRepository userRepository;
     private final RoleRepository roleRepository;
 
     @Autowired
     public ManagementService(UserRepository userRepository,
                              MongoTemplate mongoTemplate,
+                             StringRedisTemplate stringRedisTemplate,
                              RoleRepository roleRepository) {
 
         this.userRepository = userRepository;
         this.mongoTemplate = mongoTemplate;
+        this.stringRedisTemplate = stringRedisTemplate;
         this.roleRepository = roleRepository;
 
         init();
     }
 
-    private void init(){
+    private void init() {
 
         // If no user, create one
-        if(mongoTemplate.getCollection(mongoTemplate.getCollectionName(User.class)).count() == 0){
+        if (mongoTemplate.getCollection(mongoTemplate.getCollectionName(User.class)).count() == 0) {
 
             final String username = "admin";
             final String password = "admin123";
@@ -65,6 +67,15 @@ public class ManagementService{
 
     }
 
+    /*
+     *
+     *
+     *
+     *
+     *
+     *
+     * */
+
     @Nullable
     public User getUser(String username) {
         return userRepository.getByUsername(username);
@@ -73,7 +84,7 @@ public class ManagementService{
     public boolean checkToken(String username, String password) {
         Query query = new Query();
         query.addCriteria(Criteria.where("username").is(username).and("password").is(password));
-        return !mongoTemplate.find(query,User.class).isEmpty();
+        return !mongoTemplate.find(query, User.class).isEmpty();
     }
 
     public User saveUser(User user) {
@@ -89,41 +100,19 @@ public class ManagementService{
         return userRepository.findAllDto();
     }
 
-    public Set<CaterpillarSettings> listSettings(String id){
+    public Set<CaterpillarSettings> listSettings(String id) {
         Optional<User> userResult = userRepository.findById(id);
         return userResult.map(User::getCaterpillarSettings).orElse(null);
     }
 
-//    @Override
-//    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-//        User user = userRepository.getByUsername(username);
-//        if(user == null) throw new UsernameNotFoundException("No user named "+ username + ".");
-//
-//        UserDetailsDTO userDetailsDTO = new UserDetailsDTO(user);
-//
-//        if(user.getRoles() == null) {
-//            userDetailsDTO.setAttributeGrantedAuthorities(new ArrayList<>());
-//            return userDetailsDTO;
-//        }
-//
-//        List<Role> roles = roleRepository.findAllByName(user.getRoles());
-//        userDetailsDTO.setAttributeGrantedAuthorities(roles
-//                .stream()
-//                .filter(role -> role.getPermissionList() != null && role.getPermissionList().size() > 0)
-//                .flatMap(role -> role.getPermissionList().stream())
-//                .collect(Collectors.toList()));
-//
-//        return userDetailsDTO;
-//    }
-
     /*
-    *
-    *
-    *
-    * */
+     *
+     *
+     *
+     * */
 
     @CachePut(CacheKeys.SECURITY_ROLE_INFO)
-    public Role findRole(String roleName){
+    public Role findRole(String roleName) {
         return roleRepository.findByName(roleName);
     }
 
@@ -132,5 +121,24 @@ public class ManagementService{
     })
     public void saveRole(@NotNull Role newRole) {
         roleRepository.save(newRole);
+    }
+
+    /*
+     *
+     *
+     *
+     *
+     *
+     * */
+
+    public void increaseVisitCount() {
+        if (stringRedisTemplate.hasKey(CacheKeys.WEBSITE_API_VISIT_COUNT))
+            stringRedisTemplate.opsForValue().increment(CacheKeys.WEBSITE_API_VISIT_COUNT, 1);
+        else
+            stringRedisTemplate.opsForValue().set(CacheKeys.WEBSITE_API_VISIT_COUNT, "1");
+    }
+
+    public Long getVisitCount() {
+        return Long.valueOf(stringRedisTemplate.opsForValue().get(CacheKeys.WEBSITE_API_VISIT_COUNT));
     }
 }

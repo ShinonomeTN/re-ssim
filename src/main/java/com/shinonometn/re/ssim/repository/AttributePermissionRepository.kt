@@ -9,4 +9,6 @@ interface AttributePermissionRepository : MongoRepository<AttributePermission, S
 
     @DeleteQuery("{ 'scanTime' : { \$lt : ?0 } }")
     fun deleteAllOldItems(deadline: Date)
+
+    fun findByMethodSign(methodSign: String?): AttributePermission?
 }

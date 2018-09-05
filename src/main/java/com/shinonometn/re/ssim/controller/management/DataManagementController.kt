@@ -1,4 +1,4 @@
-package com.shinonometn.re.ssim.controller
+package com.shinonometn.re.ssim.controller.management
 
 import com.shinonometn.re.ssim.models.CaptureTaskDTO
 import com.shinonometn.re.ssim.security.AuthorityRequired

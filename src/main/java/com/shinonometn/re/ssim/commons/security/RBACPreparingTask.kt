@@ -1,4 +1,4 @@
-package com.shinonometn.re.ssim.commons
+package com.shinonometn.re.ssim.commons.security
 
 import com.shinonometn.commons.tools.Names
 import com.shinonometn.re.ssim.models.AttributePermission
@@ -41,45 +41,58 @@ class RBACPreparingTask(private val managementService: ManagementService,
      *
      */
     private fun initEndpointPermissionInfo() {
+
         val handlerMethods = requestMappingHandlerMapping.handlerMethods.values
 
         val scanningTimestamp = Date()
 
-        attributePermissionRepository.saveAll(handlerMethods
-                .filter { it.hasMethodAnnotation(AuthorityRequired::class.java) }
-                .map {
+        var creatingCount = 0
+        var updatingCount = 0
 
-                    val method = it.method
+        handlerMethods.filter { it.hasMethodAnnotation(AuthorityRequired::class.java) }.map {
 
-                    val methodSignName = method.name +
-                            Names.getShortClassNameList(method.parameterTypes.toCollection(ArrayList<Class<*>>())) +
-                            "@${Names.getShortClassName(method.declaringClass.name)}"
+            val method = it.method
 
-                    val annotation = method.getAnnotation(AuthorityRequired::class.java)
-                    val fatherGroupName: String? = method.run {
+            val methodSignName = method.name +
+                    Names.getShortClassNameList(method.parameterTypes.toCollection(ArrayList<Class<*>>())) +
+                    "@${Names.getShortClassName(method.declaringClass.name)}"
 
-                        if (!declaringClass.isAnnotationPresent(AuthorityGroup::class.java)) null
-                        else {
-                            declaringClass.getAnnotation(AuthorityGroup::class.java).value
-                        }
-                    }
+            val annotation = method.getAnnotation(AuthorityRequired::class.java)
+            val fatherGroupName: String? = method.run {
 
-                    AttributePermission().apply {
-                        identity = annotation.name
-                        methodSign = methodSignName
-                        description = annotation.description
-                        group = if (!StringUtils.isEmpty(annotation.group)) annotation.group else fatherGroupName
-                        scanTime = scanningTimestamp
-                    }
+                if (!declaringClass.isAnnotationPresent(AuthorityGroup::class.java)) null
+                else {
+                    declaringClass.getAnnotation(AuthorityGroup::class.java).value
+                }
+            }
 
-                }.toList()
-        ).also {
-            logger.info("${it.size} endpoint(s) be discovered.")
+            AttributePermission().apply {
+                identity = annotation.name
+                methodSign = methodSignName
+                description = annotation.description
+                group = if (!StringUtils.isEmpty(annotation.group)) annotation.group else fatherGroupName
+                scanTime = scanningTimestamp
+            }
+
+        }.forEach {
+            val oldItem = attributePermissionRepository.findByMethodSign(it.methodSign)
+
+            if (oldItem == null) attributePermissionRepository.save(it).also {
+                creatingCount++
+            } else attributePermissionRepository.save(oldItem.apply {
+                identity = it.identity
+                description = it.description
+                group = it.group
+                scanTime = it.scanTime
+            }).also {
+                updatingCount++
+            }
+
         }
 
         attributePermissionRepository.deleteAllOldItems(scanningTimestamp)
 
-        logger.info("Endpoint list updated")
+        logger.info("Endpoint list updated, $creatingCount new item and $updatingCount updated.")
     }
 
     /**
