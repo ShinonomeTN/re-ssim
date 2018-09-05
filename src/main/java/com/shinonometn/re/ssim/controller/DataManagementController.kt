@@ -1,6 +1,7 @@
 package com.shinonometn.re.ssim.controller
 
 import com.shinonometn.re.ssim.models.CaptureTaskDTO
+import com.shinonometn.re.ssim.security.AuthorityRequired
 import com.shinonometn.re.ssim.services.LingnanCourseService
 import com.shinonometn.re.ssim.services.ManagementService
 import org.springframework.beans.factory.annotation.Autowired
@@ -23,6 +24,7 @@ open class DataManagementController(@Autowired private val lingnanCourseService:
      */
     @GetMapping("/term")
     @ResponseBody
+    @AuthorityRequired(name = "term:get",group = "School Terms", description = "Get school terms, if not being cached, fetch from remote.")
     open fun termList(): Map<String, Any> = lingnanCourseService.termList
 
     /**
@@ -32,6 +34,7 @@ open class DataManagementController(@Autowired private val lingnanCourseService:
      */
     @GetMapping("/term", params = ["refresh"])
     @ResponseBody
+    @AuthorityRequired(name = "term:refresh",group = "School Terms", description = "Get school terms from remote and evict the cache")
     open fun termListRefresh(): Map<String, Any> = lingnanCourseService.reloadAndGetTermList()
 
     /**
@@ -41,6 +44,7 @@ open class DataManagementController(@Autowired private val lingnanCourseService:
      */
     @GetMapping("/task")
     @ResponseBody
+    @AuthorityRequired(name = "task:get",group = "Capture Tasks", description = "List all capture tasks.")
     open fun taskList(): List<CaptureTaskDTO> {
         return lingnanCourseService.listTasks()
     }
@@ -52,6 +56,7 @@ open class DataManagementController(@Autowired private val lingnanCourseService:
      */
     @PostMapping("/task")
     @ResponseBody
+    @AuthorityRequired(name = "task:create", group = "Capture Tasks", description = "Create a capture task.")
     open fun createTask(@RequestParam("termCode") termCode: String) =
             HashMap<String, Any>().apply {
                 val termList = lingnanCourseService.termList
@@ -71,6 +76,7 @@ open class DataManagementController(@Autowired private val lingnanCourseService:
      */
     @PostMapping("/task/{id}", params = ["start"])
     @ResponseBody
+    @AuthorityRequired(name = "task:fire", group = "Capture Tasks", description = "Start a capture task.")
     open fun startTask(@PathVariable("id") id: String, @RequestParam("profile") profileName: String, session: HttpSession): Any {
 
         val user = managementService.getUser(session.getAttribute("loginUsername")!! as String)!!
@@ -94,6 +100,7 @@ open class DataManagementController(@Autowired private val lingnanCourseService:
      * Stop a capture task
      *
      */
+    @AuthorityRequired(name = "task:stop", group = "Capture Tasks", description = "Stop a capture task.")
     @PostMapping("/task/{id}", params = ["stop"])
     @ResponseBody
     open fun stopTask(@PathVariable("id") id: String) =
@@ -115,6 +122,7 @@ open class DataManagementController(@Autowired private val lingnanCourseService:
      */
     @PostMapping("/task/{id}", params = ["resume"])
     @ResponseBody
+    @AuthorityRequired(name = "task:resume", group = "Capture Tasks", description = "Resume a capture task.")
     open fun resumeTask(@PathVariable("id") id: String) =
             HashMap<String, Any>().apply {
                 this["message"] = "success"
@@ -128,6 +136,7 @@ open class DataManagementController(@Autowired private val lingnanCourseService:
      */
     @PostMapping("/task/{id}", params = ["import"])
     @ResponseBody
+    @AuthorityRequired(name = "task:import", group = "Capture Tasks", description = "Import a finshed capture task.")
     open fun importTask(@PathVariable("id") id: String) =
             HashMap<String, Any>().apply {
 
@@ -170,6 +179,7 @@ open class DataManagementController(@Autowired private val lingnanCourseService:
      */
     @DeleteMapping("/task/{id}")
     @ResponseBody
+    @AuthorityRequired(name = "task:delete", group = "Capture Tasks", description = "Delete a capture task.")
     open fun deleteTask(@PathVariable("id") id: String) =
             HashMap<String, Any>().apply {
                 val captureTaskResult = lingnanCourseService.queryTask(id)
@@ -191,6 +201,7 @@ open class DataManagementController(@Autowired private val lingnanCourseService:
      */
     @GetMapping("/dashes")
     @ResponseBody
+    @AuthorityRequired(name = "task.dash:get", group = "Capture Tasks", description = "Get task status.")
     fun dashes() =
             HashMap<String, Any>().apply {
                 this["importingTaskCount"] = lingnanCourseService.importingTaskCount
@@ -202,6 +213,7 @@ open class DataManagementController(@Autowired private val lingnanCourseService:
      * Force clear all cache
      *
      */
+    @AuthorityRequired(name = "cache:clear", group = "Cache Management", description = "Clear all caches.")
     @PostMapping("/cache", params = ["clear"])
     @ResponseBody
     open fun clearCache() =
