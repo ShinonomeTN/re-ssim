@@ -16,6 +16,11 @@ spring:
       enabled: true
       charset: UTF-8
 
+app:
+  cache:
+    role:
+      use-second-level-cache: true # Set 'false' if using cluster
+
 server:
   tomcat:
     uri-encoding: UTF-8

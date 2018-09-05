@@ -14,4 +14,6 @@ object CacheKeys {
     const val TERM_CLASSROOM="ressim.classroom"
 
     const val SERVER_STATUS_COURSES_COUNT = "server.course_count"
+
+    const val SECURITY_ROLE_INFO = "security.role"
 }

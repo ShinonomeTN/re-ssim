@@ -123,7 +123,7 @@ class RBACPreparingTask(private val managementService: ManagementService,
                 add("admin")
             }
         }
-        managementService.saveUser(adminUser)
+        managementService.saveUser(newUser)
 
         logger.info("Created user ${newUser.username} with password ${newUser.password}, has roles ${newUser.roles}.")
     }

@@ -1,5 +1,6 @@
 package com.shinonometn.re.ssim.services;
 
+import com.shinonometn.re.ssim.commons.CacheKeys;
 import com.shinonometn.re.ssim.models.BaseUserInfoDTO;
 import com.shinonometn.re.ssim.models.CaterpillarSettings;
 import com.shinonometn.re.ssim.models.Role;
@@ -11,11 +12,16 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.interceptor.KeyGenerator;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -116,10 +122,14 @@ public class ManagementService{
     *
     * */
 
+    @CachePut(CacheKeys.SECURITY_ROLE_INFO)
     public Role findRole(String roleName){
         return roleRepository.findByName(roleName);
     }
 
+    @CacheEvict({
+            CacheKeys.SECURITY_ROLE_INFO
+    })
     public void saveRole(@NotNull Role newRole) {
         roleRepository.save(newRole);
     }
