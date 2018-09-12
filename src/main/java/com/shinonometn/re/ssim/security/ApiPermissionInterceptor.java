@@ -32,7 +32,7 @@ public class ApiPermissionInterceptor extends HandlerInterceptorAdapter {
 
     private boolean decide(HandlerMethod handler, SessionWrapper sessionWrapper) {
 
-        // Has no limit, let request pass
+        // Has no limit, let the request pass
         if (!handler.getMethod().isAnnotationPresent(AuthorityRequired.class)) return true;
 
         // No login

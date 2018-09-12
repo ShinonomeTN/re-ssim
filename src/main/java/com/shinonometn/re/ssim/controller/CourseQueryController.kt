@@ -35,6 +35,11 @@ class CourseQueryController(@Autowired private val courseInfoService: CourseInfo
                     project("weeks").andExclude("_id")
             )).uniqueMappedResult
 
+    /**
+     *
+     * Query class lessons by predicates
+     *
+     */
     @GetMapping("/{term}/course", params = ["class", "week"])
     @ResponseBody
     fun queryClassWeekCourses(@PathVariable("term") term: String,
