@@ -1,5 +1,7 @@
 package com.shinonometn.re.ssim.controller.management
 
+import com.shinonometn.re.ssim.commons.session.HttpSessionWrapper
+import com.shinonometn.re.ssim.commons.session.SessionWrapper
 import com.shinonometn.re.ssim.models.CaptureTaskDTO
 import com.shinonometn.re.ssim.security.AuthorityRequired
 import com.shinonometn.re.ssim.services.LingnanCourseService
@@ -78,8 +80,9 @@ open class DataManagementController(@Autowired private val lingnanCourseService:
     @ResponseBody
     @AuthorityRequired(name = "task:fire", group = "Capture Tasks", description = "Start a capture task.")
     open fun startTask(@PathVariable("id") id: String, @RequestParam("profile") profileName: String, session: HttpSession): Any {
+        val sessionWrapper = HttpSessionWrapper(session)
 
-        val user = managementService.getUser(session.getAttribute("loginUsername")!! as String)!!
+        val user = managementService.getUser(sessionWrapper.userDetails.username)!!
         if (user.caterpillarSettings == null) return HashMap<String, Any>().apply {
             this["error"] = "start_task_failed"
             this["message"] = "user_has_no_profile"
