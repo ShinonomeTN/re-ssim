@@ -1,4 +1,4 @@
-package com.shinonometn.re.ssim.models;
+package com.shinonometn.re.ssim.data.caterpillar;
 
 import com.shinonometn.re.ssim.caterpillar.SpiderStatus;
 import org.springframework.beans.factory.annotation.Value;

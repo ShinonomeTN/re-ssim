@@ -1,4 +1,4 @@
-package com.shinonometn.re.ssim.models
+package com.shinonometn.re.ssim.data.security
 
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
@@ -14,5 +14,5 @@ class Role : Serializable {
 
     var enabled: Boolean = true
 
-    var grantedPermission: MutableList<GrantedPermission>? = null
+    var grantedPermission: MutableList<GrantedPermission> = ArrayList()
 }

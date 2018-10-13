@@ -1,11 +1,8 @@
 package com.shinonometn.re.ssim.commons.security
 
 import com.shinonometn.commons.tools.Names
-import com.shinonometn.re.ssim.models.AttributePermission
-import com.shinonometn.re.ssim.models.GrantedPermission
-import com.shinonometn.re.ssim.models.Role
-import com.shinonometn.re.ssim.models.User
-import com.shinonometn.re.ssim.repository.AttributePermissionRepository
+import com.shinonometn.re.ssim.data.security.*
+import com.shinonometn.re.ssim.data.security.AttributePermissionRepository
 import com.shinonometn.re.ssim.security.AuthorityGroup
 import com.shinonometn.re.ssim.security.AuthorityRequired
 import com.shinonometn.re.ssim.services.ManagementService
@@ -17,6 +14,7 @@ import org.springframework.util.StringUtils
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping
 import java.util.*
 import kotlin.collections.ArrayList
+import kotlin.collections.HashSet
 
 @Component
 class RBACPreparingTask(private val managementService: ManagementService,
@@ -132,11 +130,17 @@ class RBACPreparingTask(private val managementService: ManagementService,
         val newUser = User().apply {
             username = "admin"
             password = "123456"
-            roles = ArrayList<String>().apply {
-                add("admin")
-            }
         }
         managementService.saveUser(newUser)
+
+        val userPermissionTable = UserPermission().apply {
+            roles = HashSet<String>().apply {
+                add("admin")
+            }
+            userId = newUser.id
+        }
+        managementService.saveUserPermissionTable(userPermissionTable)
+
 
         logger.info("Created user ${newUser.username} with password ${newUser.password}, has roles ${newUser.roles}.")
     }

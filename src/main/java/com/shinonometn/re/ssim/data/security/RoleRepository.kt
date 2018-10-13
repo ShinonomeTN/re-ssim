@@ -1,6 +1,5 @@
-package com.shinonometn.re.ssim.repository
+package com.shinonometn.re.ssim.data.security
 
-import com.shinonometn.re.ssim.models.Role
 import org.springframework.data.mongodb.repository.MongoRepository
 
 interface RoleRepository : MongoRepository<Role,String>{

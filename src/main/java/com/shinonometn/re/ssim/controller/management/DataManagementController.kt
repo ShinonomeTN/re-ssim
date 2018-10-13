@@ -1,12 +1,11 @@
 package com.shinonometn.re.ssim.controller.management
 
 import com.shinonometn.re.ssim.commons.session.HttpSessionWrapper
-import com.shinonometn.re.ssim.commons.session.SessionWrapper
-import com.shinonometn.re.ssim.models.CaptureTaskDTO
+import com.shinonometn.re.ssim.data.caterpillar.CaptureTaskDTO
+import com.shinonometn.re.ssim.data.caterpillar.CaterpillarSettingRepository
 import com.shinonometn.re.ssim.security.AuthorityRequired
 import com.shinonometn.re.ssim.services.LingnanCourseService
 import com.shinonometn.re.ssim.services.ManagementService
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.cache.CacheManager
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.*
@@ -15,9 +14,10 @@ import javax.servlet.http.HttpSession
 
 @Controller
 @RequestMapping("/api/mng")
-open class DataManagementController(@Autowired private val lingnanCourseService: LingnanCourseService,
-                                    @Autowired private val managementService: ManagementService,
-                                    @Autowired private val cacheManager: CacheManager) {
+open class DataManagementController(private val lingnanCourseService: LingnanCourseService,
+                                    private val managementService: ManagementService,
+                                    private val cacheManager: CacheManager,
+                                    private val caterpillarSettingRepository: CaterpillarSettingRepository) {
 
     /**
      *
@@ -26,7 +26,7 @@ open class DataManagementController(@Autowired private val lingnanCourseService:
      */
     @GetMapping("/term")
     @ResponseBody
-    @AuthorityRequired(name = "term:get",group = "School Terms", description = "Get school terms, if not being cached, fetch from remote.")
+    @AuthorityRequired(name = "term:get", group = "School Terms", description = "Get school terms, if not being cached, fetch from remote.")
     open fun termList(): Map<String, Any> = lingnanCourseService.termList
 
     /**
@@ -36,7 +36,7 @@ open class DataManagementController(@Autowired private val lingnanCourseService:
      */
     @GetMapping("/term", params = ["refresh"])
     @ResponseBody
-    @AuthorityRequired(name = "term:refresh",group = "School Terms", description = "Get school terms from remote and evict the cache")
+    @AuthorityRequired(name = "term:refresh", group = "School Terms", description = "Get school terms from remote and evict the cache")
     open fun termListRefresh(): Map<String, Any> = lingnanCourseService.reloadAndGetTermList()
 
     /**
@@ -46,7 +46,7 @@ open class DataManagementController(@Autowired private val lingnanCourseService:
      */
     @GetMapping("/task")
     @ResponseBody
-    @AuthorityRequired(name = "task:get",group = "Capture Tasks", description = "List all capture tasks.")
+    @AuthorityRequired(name = "task:get", group = "Capture Tasks", description = "List all capture tasks.")
     open fun taskList(): List<CaptureTaskDTO> {
         return lingnanCourseService.listTasks()
     }
@@ -83,18 +83,13 @@ open class DataManagementController(@Autowired private val lingnanCourseService:
         val sessionWrapper = HttpSessionWrapper(session)
 
         val user = managementService.getUser(sessionWrapper.userDetails.username)!!
-        if (user.caterpillarSettings == null) return HashMap<String, Any>().apply {
-            this["error"] = "start_task_failed"
-            this["message"] = "user_has_no_profile"
-        }
 
-
-        return lingnanCourseService.startTask(id, user.caterpillarSettings!!.find {
-            it.username == profileName
-        } ?: return HashMap<String, Any>().apply {
-            this["error"] = "start_task_failed"
-            this["message"] = "could_not_get_profile"
-        })
+        return lingnanCourseService.startTask(
+                id,
+                caterpillarSettingRepository.findByUserAndUsername(user.id, profileName) ?: return HashMap<String, Any>().apply {
+                    this["error"] = "start_task_failed"
+                    this["message"] = "could_not_get_profile"
+                })
 
     }
 

@@ -2,6 +2,7 @@ package com.shinonometn.re.ssim.caterpillar.kingo.capture;
 
 import com.shinonometn.re.ssim.caterpillar.test.TestHelper;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import us.codecraft.webmagic.Request;
 import us.codecraft.webmagic.Site;
@@ -14,6 +15,7 @@ import java.util.stream.Collectors;
 
 import static com.shinonometn.re.ssim.caterpillar.kingo.KingoUrls.calendarPage;
 
+@Ignore
 public class CalendarPageProcessorTest {
 
     private Site site = Site.me()

@@ -1,6 +1,5 @@
-package com.shinonometn.re.ssim.repository
+package com.shinonometn.re.ssim.data.security
 
-import com.shinonometn.re.ssim.models.AttributePermission
 import org.springframework.data.mongodb.repository.DeleteQuery
 import org.springframework.data.mongodb.repository.MongoRepository
 import java.util.*

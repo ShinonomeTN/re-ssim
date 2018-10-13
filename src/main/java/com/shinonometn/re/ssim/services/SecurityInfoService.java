@@ -1,8 +1,8 @@
 package com.shinonometn.re.ssim.services;
 
-import com.shinonometn.re.ssim.models.Role;
-import com.shinonometn.re.ssim.models.User;
-import com.shinonometn.re.ssim.repository.UserRepository;
+import com.shinonometn.re.ssim.data.security.Role;
+import com.shinonometn.re.ssim.data.security.User;
+import com.shinonometn.re.ssim.data.security.UserRepository;
 import com.shinonometn.re.ssim.security.GrantedAuthority;
 import com.shinonometn.re.ssim.security.UserDetails;
 import com.shinonometn.re.ssim.security.UserDetailsSource;

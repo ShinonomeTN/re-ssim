@@ -1,7 +1,5 @@
-package com.shinonometn.re.ssim.repository
+package com.shinonometn.re.ssim.data.caterpillar
 
-import com.shinonometn.re.ssim.models.CaptureTask
-import com.shinonometn.re.ssim.models.CaptureTaskDTO
 import org.springframework.data.mongodb.repository.Query
 import org.springframework.data.repository.CrudRepository
 

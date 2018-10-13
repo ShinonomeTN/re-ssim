@@ -1,14 +1,13 @@
-package com.shinonometn.re.ssim.models
+package com.shinonometn.re.ssim.data.caterpillar
 
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
-
-import java.util.Date
+import java.util.*
 
 @Document
 class CaptureTask {
 
-    @get:Id
+    @Id
     var id: String? = null
     var termCode: String? = null
     var termName: String? = null

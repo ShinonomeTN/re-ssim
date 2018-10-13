@@ -8,12 +8,12 @@ import com.shinonometn.re.ssim.caterpillar.kingo.KingoUrls;
 import com.shinonometn.re.ssim.caterpillar.kingo.capture.*;
 import com.shinonometn.re.ssim.caterpillar.kingo.pojo.Course;
 import com.shinonometn.re.ssim.commons.CacheKeys;
-import com.shinonometn.re.ssim.models.CaptureTask;
-import com.shinonometn.re.ssim.models.CaptureTaskDTO;
-import com.shinonometn.re.ssim.models.CaterpillarSettings;
-import com.shinonometn.re.ssim.models.CourseEntity;
-import com.shinonometn.re.ssim.repository.CaptureTaskRepository;
-import com.shinonometn.re.ssim.repository.CourseRepository;
+import com.shinonometn.re.ssim.data.caterpillar.CaptureTask;
+import com.shinonometn.re.ssim.data.caterpillar.CaptureTaskDTO;
+import com.shinonometn.re.ssim.data.caterpillar.CaterpillarSetting;
+import com.shinonometn.re.ssim.data.course.CourseEntity;
+import com.shinonometn.re.ssim.data.caterpillar.CaptureTaskRepository;
+import com.shinonometn.re.ssim.data.course.CourseRepository;
 import org.bson.Document;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -88,7 +88,7 @@ public class LingnanCourseService {
 
         final Map<String, String> capturedResult = new HashMap<>();
 
-        Spider.create(new TermListPageProcessor(CaterpillarSettings.Companion.createDefaultSite()))
+        Spider.create(new TermListPageProcessor(CaterpillarSetting.Companion.createDefaultSite()))
                 .addUrl(KingoUrls.classInfoQueryPage)
                 .addPipeline((r, t) -> capturedResult.putAll(TermListPageProcessor.getTerms(r)))
                 .run();
@@ -178,7 +178,7 @@ public class LingnanCourseService {
      * @param taskId task id
      * @return dto
      */
-    public CaptureTaskDTO startTask(String taskId, CaterpillarSettings caterpillarSettings) {
+    public CaptureTaskDTO startTask(String taskId, CaterpillarSetting caterpillarSetting) {
         Optional<CaptureTask> captureTaskResult = captureTaskRepository.findById(taskId);
         if (!captureTaskResult.isPresent()) return null;
 
@@ -187,7 +187,7 @@ public class LingnanCourseService {
         if (dto.getSpiderStatus() != null)
             throw new IllegalStateException("spider_exist");
 
-        Site site = doLogin(caterpillarSettings);
+        Site site = doLogin(caterpillarSetting);
 
         File tempFolder = getTempDir(taskId);
         Spider spider = Spider.create(new CourseDetailsPageProcessor(site))
@@ -202,7 +202,7 @@ public class LingnanCourseService {
                     }
                 })
                 .setUUID(taskId)
-                .thread(caterpillarSettings.getThreads());
+                .thread(caterpillarSetting.getThreads());
 
         spider.startRequest(fetchTermList(site, captureTaskResult.get().getTermCode()).stream()
                 .map(id -> createSubjectRequest(site, captureTaskResult.get().getTermCode(), id))
@@ -223,11 +223,11 @@ public class LingnanCourseService {
     /**
      * Check if caterpillar setting valid
      *
-     * @param caterpillarSettings settings
+     * @param caterpillarSetting settings
      * @return result
      */
-    public boolean isSettingValid(CaterpillarSettings caterpillarSettings) {
-        return doLogin(caterpillarSettings) != null;
+    public boolean isSettingValid(CaterpillarSetting caterpillarSetting) {
+        return doLogin(caterpillarSetting) != null;
     }
 
     /**
@@ -412,13 +412,13 @@ public class LingnanCourseService {
         return !isLogin.get();
     }
 
-    private Site doLogin(CaterpillarSettings caterpillarSettings) {
+    private Site doLogin(CaterpillarSetting caterpillarSetting) {
 
-        Site site = caterpillarSettings.createSite();
+        Site site = caterpillarSetting.createSite();
 
-        String username = caterpillarSettings.getUsername();
-        String password = caterpillarSettings.getPassword();
-        String role = caterpillarSettings.getRole();
+        String username = caterpillarSetting.getUsername();
+        String password = caterpillarSetting.getPassword();
+        String role = caterpillarSetting.getRole();
 
 
         Map<String, Object> items = new HashMap<>();
@@ -441,7 +441,7 @@ public class LingnanCourseService {
         loginRequest.setMethod(HttpConstant.Method.POST);
         loginRequest.addHeader("Content-Type", "application/x-www-form-urlencoded");
         loginRequest.addHeader("Referer", KingoUrls.loginPageAddress);
-        loginRequest.setRequestBody(HttpRequestBody.form(formFields, Objects.requireNonNull(caterpillarSettings.getEncoding())));
+        loginRequest.setRequestBody(HttpRequestBody.form(formFields, Objects.requireNonNull(caterpillarSetting.getEncoding())));
 
 
         Spider.create(new LoginExecutePageProcessor(site))

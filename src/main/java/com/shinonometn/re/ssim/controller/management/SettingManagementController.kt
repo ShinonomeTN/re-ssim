@@ -1,10 +1,9 @@
 package com.shinonometn.re.ssim.controller.management
 
 import com.shinonometn.re.ssim.commons.session.HttpSessionWrapper
-import com.shinonometn.re.ssim.commons.session.SessionWrapper
-import com.shinonometn.re.ssim.models.BaseUserInfoDTO
-import com.shinonometn.re.ssim.models.CaterpillarSettings
-import com.shinonometn.re.ssim.models.User
+import com.shinonometn.re.ssim.data.security.BaseUserInfoDTO
+import com.shinonometn.re.ssim.data.caterpillar.CaterpillarSetting
+import com.shinonometn.re.ssim.data.security.User
 import com.shinonometn.re.ssim.security.AuthorityRequired
 import com.shinonometn.re.ssim.security.UserDetailsSource
 import com.shinonometn.re.ssim.services.LingnanCourseService
@@ -41,32 +40,32 @@ class SettingManagementController(@Autowired private val managementService: Mana
                 this["message"] = "success"
             }
 
-    @PutMapping("/settings/user")
-    @ResponseBody
-    @AuthorityRequired(name = "user:create", group = "User management", description = "Create an user.")
-    fun createUser(@RequestBody loginForm: LoginForm) =
-            HashMap<String, Any>(2).apply {
-                if (managementService.getUser(loginForm.username) != null) {
-                    this["error"] = "create_user_failed"
-                    this["message"] = "user_exist"
-                } else {
-                    managementService.saveUser(User().apply {
-                        username = loginForm.username
-                        password = loginForm.password
-                    })
-
-                    this["message"] = "success"
-                }
-            }
-
-    @DeleteMapping("/settings/user/{id}")
-    @ResponseBody
-    @AuthorityRequired(name = "user:delete", group = "User management", description = "Delete an user.")
-    fun deleteUser(@PathVariable("id") id: String) =
-            HashMap<String, Any>(1).apply {
-                managementService.removeUser(id)
-                this["message"] = "success"
-            }
+//    @PutMapping("/settings/user")
+//    @ResponseBody
+//    @AuthorityRequired(name = "user:create", group = "User management", description = "Create an user.")
+//    fun createUser(@RequestBody loginForm: LoginForm) =
+//            HashMap<String, Any>(2).apply {
+//                if (managementService.getUser(loginForm.username) != null) {
+//                    this["error"] = "create_user_failed"
+//                    this["message"] = "user_exist"
+//                } else {
+//                    managementService.saveUser(User().apply {
+//                        username = loginForm.username
+//                        password = loginForm.password
+//                    })
+//
+//                    this["message"] = "success"
+//                }
+//            }
+//
+//    @DeleteMapping("/settings/user/{id}")
+//    @ResponseBody
+//    @AuthorityRequired(name = "user:delete", group = "User management", description = "Delete an user.")
+//    fun deleteUser(@PathVariable("id") id: String) =
+//            HashMap<String, Any>(1).apply {
+//                managementService.removeUser(id)
+//                this["message"] = "success"
+//            }
 
     @PutMapping("/settings/user",params = ["update"])
     @ResponseBody
@@ -92,15 +91,15 @@ class SettingManagementController(@Autowired private val managementService: Mana
     @GetMapping("/settings/user/{id}/profiles")
     @ResponseBody
     @AuthorityRequired(name = "user.caterpillar_settings:get", group = "Caterpillar Settings", description = "List user caterpillar settings.")
-    fun listUserCaterpillarSettings(@PathVariable("id")id : String): Set<CaterpillarSettings>? =
+    fun listUserCaterpillarSettings(@PathVariable("id")id : String): Collection<CaterpillarSetting>? =
             managementService.listSettings(id)
 
     @PostMapping("/settings/caterpillar",params = ["settingValidate"])
     @ResponseBody
     @AuthorityRequired(name = "user.caterpillar_settings:validate", group = "Caterpillar Settings", description = "Validate a caterpillar setting.")
-    fun checkSettings(@RequestBody caterpillarSettings: CaterpillarSettings) =
+    fun checkSettings(@RequestBody caterpillarSetting: CaterpillarSetting) =
             HashMap<String,Any>(2).apply {
-                if(lingnanCourseService.isSettingValid(caterpillarSettings)){
+                if(lingnanCourseService.isSettingValid(caterpillarSetting)){
                     this["message"] = "setting_is_valid"
                 }else{
                     this["error"] = "setting_not_valid"

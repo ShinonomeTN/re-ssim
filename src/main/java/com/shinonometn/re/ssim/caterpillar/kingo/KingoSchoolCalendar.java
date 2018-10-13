@@ -50,7 +50,7 @@ public class KingoSchoolCalendar implements SchoolCalendar {
     }
 
     public int getDaysOfTerm() {
-        return (int) ChronoUnit.DAYS.between(startDate,endDate) + 1;
+        return (int) ChronoUnit.DAYS.between(startDate, endDate) + 1;
     }
 
     public SchoolDate getFromDateTime(LocalDateTime dateTime) {
@@ -62,7 +62,12 @@ public class KingoSchoolCalendar implements SchoolCalendar {
         if (!startWeekday.equals(DayOfWeek.MONDAY)) startDateTime = startDateTime.minusDays(startWeekday.getValue());
         if (startDateTime.isAfter(dateTime)) return null;
 
+        // Get how many weeks passed
         int week = (int) Math.ceil((double) ChronoUnit.DAYS.between(startDateTime.toLocalDate(), dateTime) / 7);
+        // Week cannot be 0
+        if (week == 0) week++;
+
+        // Get current weekday
         DayOfWeek dayOfWeek = dateTime.getDayOfWeek();
 
         SchoolDate schoolDate = new SchoolDate();

@@ -1,6 +1,7 @@
 package com.shinonometn.re.ssim.caterpillar.kingo.capture;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.Ignore;
 import org.junit.Test;
 import us.codecraft.webmagic.Request;
 import us.codecraft.webmagic.Site;
@@ -18,6 +19,7 @@ import java.util.stream.Stream;
 
 import static org.junit.Assert.*;
 
+@Ignore
 public class CourseDetailsPageProcessorTest {
 
     @Test

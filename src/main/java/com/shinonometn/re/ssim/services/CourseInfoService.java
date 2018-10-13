@@ -1,8 +1,8 @@
 package com.shinonometn.re.ssim.services;
 
 import com.shinonometn.re.ssim.commons.CacheKeys;
-import com.shinonometn.re.ssim.models.CourseEntity;
-import com.shinonometn.re.ssim.repository.CourseRepository;
+import com.shinonometn.re.ssim.data.course.CourseEntity;
+import com.shinonometn.re.ssim.data.course.CourseRepository;
 import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;

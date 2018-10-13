@@ -1,4 +1,4 @@
-package com.shinonometn.re.ssim.models
+package com.shinonometn.re.ssim.data.course
 
 import com.shinonometn.re.ssim.caterpillar.kingo.pojo.Lesson
 import org.springframework.data.annotation.Id

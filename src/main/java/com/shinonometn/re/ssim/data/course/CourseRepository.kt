@@ -1,6 +1,5 @@
-package com.shinonometn.re.ssim.repository
+package com.shinonometn.re.ssim.data.course
 
-import com.shinonometn.re.ssim.models.CourseEntity
 import org.springframework.data.mongodb.repository.MongoRepository
 
 interface CourseRepository : MongoRepository<CourseEntity, String>

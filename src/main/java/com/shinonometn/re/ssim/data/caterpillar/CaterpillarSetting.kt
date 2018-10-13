@@ -1,8 +1,13 @@
-package com.shinonometn.re.ssim.models
+package com.shinonometn.re.ssim.data.caterpillar
 
+import org.springframework.data.annotation.Id
 import us.codecraft.webmagic.Site
 
-class CaterpillarSettings {
+class CaterpillarSetting {
+
+    @Id
+    var id: String? = null
+    var userId: String? = null
 
     var username: String? = null
     var password: String? = null
@@ -10,9 +15,6 @@ class CaterpillarSettings {
     var userAgent: String? = null
     var encoding: String? = null
     var threads: Int = 1
-    var public: Boolean = false
-
-
 
     fun createSite() : Site = Site
             .me()
@@ -27,7 +29,7 @@ class CaterpillarSettings {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as CaterpillarSettings
+        other as CaterpillarSetting
 
         if (username != other.username) return false
 

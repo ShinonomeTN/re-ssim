@@ -1,12 +1,15 @@
 package com.shinonometn.re.ssim.services;
 
 import com.shinonometn.re.ssim.commons.CacheKeys;
-import com.shinonometn.re.ssim.models.BaseUserInfoDTO;
-import com.shinonometn.re.ssim.models.CaterpillarSettings;
-import com.shinonometn.re.ssim.models.Role;
-import com.shinonometn.re.ssim.models.User;
-import com.shinonometn.re.ssim.repository.RoleRepository;
-import com.shinonometn.re.ssim.repository.UserRepository;
+import com.shinonometn.re.ssim.data.caterpillar.CaterpillarSetting;
+import com.shinonometn.re.ssim.data.security.BaseUserInfoDTO;
+import com.shinonometn.re.ssim.data.security.Role;
+import com.shinonometn.re.ssim.data.security.User;
+import com.shinonometn.re.ssim.data.security.UserPermission;
+import com.shinonometn.re.ssim.data.caterpillar.CaterpillarSettingRepository;
+import com.shinonometn.re.ssim.data.security.RoleRepository;
+import com.shinonometn.re.ssim.data.security.UserPermissionRepository;
+import com.shinonometn.re.ssim.data.security.UserRepository;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -21,8 +24,6 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.Set;
 
 @Service
 public class ManagementService {
@@ -34,17 +35,23 @@ public class ManagementService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final CaterpillarSettingRepository caterpillarSettingRepository;
+    private final UserPermissionRepository userPermissionRepository;
 
     @Autowired
     public ManagementService(UserRepository userRepository,
                              MongoTemplate mongoTemplate,
                              StringRedisTemplate stringRedisTemplate,
-                             RoleRepository roleRepository) {
+                             RoleRepository roleRepository,
+                             CaterpillarSettingRepository caterpillarSettingRepository,
+                             UserPermissionRepository userPermissionRepository) {
 
         this.userRepository = userRepository;
         this.mongoTemplate = mongoTemplate;
         this.stringRedisTemplate = stringRedisTemplate;
         this.roleRepository = roleRepository;
+        this.caterpillarSettingRepository = caterpillarSettingRepository;
+        this.userPermissionRepository = userPermissionRepository;
 
         init();
     }
@@ -100,9 +107,8 @@ public class ManagementService {
         return userRepository.findAllDto();
     }
 
-    public Set<CaterpillarSettings> listSettings(String id) {
-        Optional<User> userResult = userRepository.findById(id);
-        return userResult.map(User::getCaterpillarSettings).orElse(null);
+    public List<CaterpillarSetting> listSettings(String id) {
+        return caterpillarSettingRepository.findAllByUserId(id);
     }
 
     /*
@@ -140,5 +146,9 @@ public class ManagementService {
 
     public Long getVisitCount() {
         return Long.valueOf(stringRedisTemplate.opsForValue().get(CacheKeys.WEBSITE_API_VISIT_COUNT));
+    }
+
+    public void saveUserPermissionTable(@NotNull UserPermission userPermissionTable) {
+        userPermissionRepository.save(userPermissionTable);
     }
 }

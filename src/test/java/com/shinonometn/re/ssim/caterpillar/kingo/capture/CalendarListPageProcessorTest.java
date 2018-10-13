@@ -1,6 +1,7 @@
 package com.shinonometn.re.ssim.caterpillar.kingo.capture;
 
 import com.shinonometn.re.ssim.caterpillar.test.TestHelper;
+import org.junit.Ignore;
 import org.junit.Test;
 import us.codecraft.webmagic.Site;
 import us.codecraft.webmagic.Spider;
@@ -11,6 +12,7 @@ import java.util.Map;
 import static com.shinonometn.re.ssim.caterpillar.kingo.KingoUrls.*;
 import static org.junit.Assert.*;
 
+@Ignore
 public class CalendarListPageProcessorTest {
 
     @Test
