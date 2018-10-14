@@ -1,22 +1,36 @@
 package com.shinonometn.re.ssim.data.caterpillar
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import org.springframework.data.annotation.Id
 import us.codecraft.webmagic.Site
 
 class CaterpillarSetting {
 
+    /*
+        Base info
+     */
     @Id
     var id: String? = null
     var userId: String? = null
+    var name: String? = null
+    var description: String? = null
 
+    /*
+        Login info
+     */
     var username: String? = null
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     var password: String? = null
     var role: String? = null
+
+    /*
+        Caterpillar options
+     */
     var userAgent: String? = null
-    var encoding: String? = null
+    var encoding: String? = "utf8"
     var threads: Int = 1
 
-    fun createSite() : Site = Site
+    fun createSite(): Site = Site
             .me()
             .setDomain("jwgl.lnc.edu.cn")
             .setTimeOut(5000)
@@ -41,7 +55,7 @@ class CaterpillarSetting {
     }
 
     companion object {
-        fun createDefaultSite() : Site = Site
+        fun createDefaultSite(): Site = Site
                 .me()
                 .setDomain("jwgl.lnc.edu.cn")
                 .setTimeOut(5000)

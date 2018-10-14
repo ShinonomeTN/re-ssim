@@ -67,26 +67,26 @@ class SettingManagementController(@Autowired private val managementService: Mana
 //                this["message"] = "success"
 //            }
 
-    @PutMapping("/settings/user",params = ["update"])
-    @ResponseBody
-    @AuthorityRequired(name = "user:update", group = "User management", description = "Update an existed user.")
-    fun saveUser(@RequestBody user: User) =
-            HashMap<String, Any>(1).apply {
-                if (user.id == null) {
-                    this["error"] = "save_user_error"
-                    this["message"] = "user_not_exist"
-                } else {
-                    managementService.saveUser(user)
-                    this["message"] = "success"
-                    this["data"] = user
-                }
-            }
+//    @PutMapping("/settings/user",params = ["update"])
+//    @ResponseBody
+//    @AuthorityRequired(name = "user:update", group = "User management", description = "Update an existed user.")
+//    fun saveUser(@RequestBody user: User) =
+//            HashMap<String, Any>(1).apply {
+//                if (user.id == null) {
+//                    this["error"] = "save_user_error"
+//                    this["message"] = "user_not_exist"
+//                } else {
+//                    managementService.saveUser(user)
+//                    this["message"] = "success"
+//                    this["data"] = user
+//                }
+//            }
 
-    @GetMapping("/settings/user")
-    @ResponseBody
-    @AuthorityRequired(name = "user_list:get", group = "User management", description = "List all user.")
-    fun listUser(): List<BaseUserInfoDTO> =
-            managementService.listUsers()
+//    @GetMapping("/settings/user")
+//    @ResponseBody
+//    @AuthorityRequired(name = "user_list:get", group = "User management", description = "List all user.")
+//    fun listUser(): List<BaseUserInfoDTO> =
+//            managementService.listUsers()
 
     @GetMapping("/settings/user/{id}/profiles")
     @ResponseBody
