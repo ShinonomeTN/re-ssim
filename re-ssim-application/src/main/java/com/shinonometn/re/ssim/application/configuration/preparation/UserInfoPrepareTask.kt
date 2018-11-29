@@ -68,8 +68,8 @@ class UserInfoPrepareTask(
             user
         }
 
-        val permissionInfo = permissionService.findAllByUser(defaultUser.username!!)
-        if (permissionInfo.size > 0) return
+        val permissionInfo = permissionService.findByUser(defaultUser.username!!)
+        if (permissionInfo.isPresent) return
 
         val superPowerRoleName = "superUser"
         roleService.findByName(superPowerRoleName).orElseGet {

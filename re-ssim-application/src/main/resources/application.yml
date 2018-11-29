@@ -28,6 +28,7 @@ app:
 #    role:
 #      use-second-level-cache: true # Set 'false' if using cluster
   dataDir: ./data
+  inMemoryDataKey: app:key
 
 server:
   tomcat:
