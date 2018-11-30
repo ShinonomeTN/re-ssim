@@ -2,6 +2,7 @@ package com.shinonometn.re.ssim.service.caterpillar.repository
 
 import com.shinonometn.re.ssim.service.caterpillar.entity.CaterpillarSetting
 import org.springframework.data.mongodb.repository.MongoRepository
+import java.util.*
 
 interface CaterpillarSettingRepository: MongoRepository<CaterpillarSetting,String> {
 
@@ -9,5 +10,6 @@ interface CaterpillarSettingRepository: MongoRepository<CaterpillarSetting,Strin
 
     fun findByUserAndUsername(id: String?, profileName: String): CaterpillarSetting?
 
-    fun getByUserIdAndName(s: String, name: String?): CaterpillarSetting?
+
+    fun findByOwnerAndName(username: String, name: String): Optional<CaterpillarSetting>
 }

@@ -1,13 +1,8 @@
 package com.shinonometn.re.ssim.application.controller.management
 
-import com.shinonometn.re.ssim.commons.session.HttpSessionWrapper
-import com.shinonometn.re.ssim.data.caterpillar.CaptureTaskDTO
-import com.shinonometn.re.ssim.data.caterpillar.CaterpillarSettingRepository
-import com.shinonometn.re.ssim.application.security.AuthorityRequired
-import com.shinonometn.re.ssim.services.LingnanCourseService
-import com.shinonometn.re.ssim.services.ManagementService
+import com.shinonometn.re.ssim.application.configuration.preparation.endpoint.scanning.ApiDescription
+import com.shinonometn.re.ssim.service.caterpillar.entity.CaptureTaskDTO
 import org.apache.shiro.authz.annotation.RequiresPermissions
-import org.springframework.cache.CacheManager
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.*
 import java.io.File
@@ -15,10 +10,7 @@ import javax.servlet.http.HttpSession
 
 @Controller
 @RequestMapping("/api/mng")
-open class DataManagementController(private val lingnanCourseService: com.shinonometn.re.ssim.services.LingnanCourseService,
-                                    private val managementService: com.shinonometn.re.ssim.services.ManagementService,
-                                    private val cacheManager: CacheManager,
-                                    private val caterpillarSettingRepository: CaterpillarSettingRepository) {
+open class DataManagementController(private val lingnanCourseService: LingnanCourseServicey) {
 
     /**
      *
@@ -27,7 +19,7 @@ open class DataManagementController(private val lingnanCourseService: com.shinon
      */
     @GetMapping("/term")
     @ResponseBody
-    @AuthorityRequired(name = "term:get", group = "School Terms", description = "Get school terms, if not being cached, fetch from remote.")
+    @ApiDescription(title = "Get school term list", description = "Get school terms, if not being cached, fetch from remote.")
     @RequiresPermissions("term_list:read")
     open fun termList(): Map<String, Any> = lingnanCourseService.termList
 
@@ -38,7 +30,7 @@ open class DataManagementController(private val lingnanCourseService: com.shinon
      */
     @GetMapping("/term", params = ["refresh"])
     @ResponseBody
-    @AuthorityRequired(name = "term:refresh", group = "School Terms", description = "Get school terms from remote and evict the cache")
+    @ApiDescription(title = "Refresh school term list", description = "Get school terms from remote and evict the cache")
     @RequiresPermissions("term_list:refresh")
     open fun termListRefresh(): Map<String, Any> = lingnanCourseService.reloadAndGetTermList()
 
@@ -49,9 +41,9 @@ open class DataManagementController(private val lingnanCourseService: com.shinon
      */
     @GetMapping("/task")
     @ResponseBody
-    @AuthorityRequired(name = "task:get", group = "Capture Tasks", description = "List all capture tasks.")
+    @ApiDescription(title = "List all capture tasks", description = "List all capture tasks. If task is running, show progress")
     @RequiresPermissions("task:list")
-    open fun taskList(): List<com.shinonometn.re.ssim.data.caterpillar.CaptureTaskDTO> {
+    open fun taskList(): List<CaptureTaskDTO> {
         return lingnanCourseService.listTasks()
     }
 
@@ -62,7 +54,7 @@ open class DataManagementController(private val lingnanCourseService: com.shinon
      */
     @PostMapping("/task")
     @ResponseBody
-    @AuthorityRequired(name = "task:create", group = "Capture Tasks", description = "Create a capture task.")
+    @ApiDescription(title = "Create a task", description = "Create a capture task.")
     @RequiresPermissions("task:create")
     open fun createTask(@RequestParam("termCode") termCode: String) =
             HashMap<String, Any>().apply {
@@ -83,7 +75,7 @@ open class DataManagementController(private val lingnanCourseService: com.shinon
      */
     @PostMapping("/task/{id}", params = ["start"])
     @ResponseBody
-    @AuthorityRequired(name = "task:fire", group = "Capture Tasks", description = "Start a capture task.")
+    @ApiDescription(title = "Start a capture task", description = "Start a capture task.")
     @RequiresPermissions("task:start")
     open fun startTask(@PathVariable("id") id: String, @RequestParam("profile") profileName: String, session: HttpSession): Any {
         val sessionWrapper = com.shinonometn.re.ssim.commons.session.HttpSessionWrapper(session)

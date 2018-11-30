@@ -1,6 +1,7 @@
 package com.shinonometn.re.ssim.service.statistics.entity
 
 import org.springframework.data.mongodb.core.mapping.Document
+import java.util.*
 
 @Document
 class ApiEndpointInfo {
@@ -14,5 +15,7 @@ class ApiEndpointInfo {
 
     var title : String = ""
     var description: String = ""
+
+    var updateDate : Date? = null
 
 }

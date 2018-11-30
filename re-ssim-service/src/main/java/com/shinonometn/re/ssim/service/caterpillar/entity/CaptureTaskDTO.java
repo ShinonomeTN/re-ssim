@@ -1,6 +1,7 @@
 package com.shinonometn.re.ssim.service.caterpillar.entity;
 
 import com.shinonometn.re.ssim.service.caterpillar.SpiderStatus;
+import com.shinonometn.re.ssim.service.caterpillar.commons.CaptureTaskStage;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.io.File;

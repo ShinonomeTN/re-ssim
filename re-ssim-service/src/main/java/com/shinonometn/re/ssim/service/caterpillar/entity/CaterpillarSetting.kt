@@ -1,9 +1,11 @@
 package com.shinonometn.re.ssim.service.caterpillar.entity
 
+import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.springframework.data.annotation.Id
 import us.codecraft.webmagic.Site
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 class CaterpillarSetting {
 
     /*
@@ -11,7 +13,7 @@ class CaterpillarSetting {
      */
     @Id
     var id: String? = null
-    var userId: String? = null
+    var owner: String? = null
     var name: String? = null
     var description: String? = null
 
