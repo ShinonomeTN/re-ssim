@@ -16,10 +16,11 @@ class ImportTask {
     var dataPath : String? = null
 
     var status : ImportTaskStatus = ImportTaskStatus.NONE
+    var statusReport: String = ""
 
     var termCode : String? = null
     var termName : String? = null
 
     var createDate : Date? = null
-    var finsihDate : Date? = null
+    var finishDate : Date? = null
 }

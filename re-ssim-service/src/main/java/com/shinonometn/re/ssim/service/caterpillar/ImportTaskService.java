@@ -2,39 +2,50 @@ package com.shinonometn.re.ssim.service.caterpillar;
 
 import com.shinonometn.re.ssim.commons.BusinessException;
 import com.shinonometn.re.ssim.commons.CacheKeys;
-import com.shinonometn.re.ssim.commons.JSON;
 import com.shinonometn.re.ssim.commons.file.fundation.FileContext;
-import com.shinonometn.re.ssim.service.caterpillar.commons.CaptureTaskStage;
+import com.shinonometn.re.ssim.service.caterpillar.plugin.CaterpillarMonitorStore;
 import com.shinonometn.re.ssim.service.caterpillar.entity.CaptureTask;
 import com.shinonometn.re.ssim.service.caterpillar.entity.ImportTask;
 import com.shinonometn.re.ssim.service.caterpillar.repository.CaptureTaskRepository;
 import com.shinonometn.re.ssim.service.caterpillar.repository.ImportTaskRepository;
-import com.shinonometn.re.ssim.service.courses.entity.CourseEntity;
-import org.bson.Document;
+import com.shinonometn.re.ssim.service.caterpillar.task.CourseDataImportTask;
+import com.shinonometn.re.ssim.service.courses.CourseInfoService;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Objects;
+import java.util.Date;
 
 @Service
 public class ImportTaskService {
 
     private final CaptureTaskRepository captureTaskRepository;
     private final ImportTaskRepository importTaskRepository;
+
+    private final CaterpillarMonitorStore caterpillarMonitorStore;
     private final CaterpillarFileManageService fileManageService;
+
+    private final CourseInfoService courseInfoService;
+
+    private final TaskExecutor taskExecutor;
 
     public ImportTaskService(CaptureTaskRepository captureTaskRepository,
                              ImportTaskRepository importTaskRepository,
-                             CaterpillarFileManageService fileManageService) {
+                             CaterpillarFileManageService fileManageService,
+                             CaterpillarMonitorStore caterpillarMonitorStore,
+                             CourseInfoService courseInfoService, TaskExecutor taskExecutor) {
 
         this.captureTaskRepository = captureTaskRepository;
         this.importTaskRepository = importTaskRepository;
         this.fileManageService = fileManageService;
+        this.caterpillarMonitorStore = caterpillarMonitorStore;
+        this.courseInfoService = courseInfoService;
+        this.taskExecutor = taskExecutor;
+    }
+
+    public ImportTask save(ImportTask importTask){
+        return importTaskRepository.save(importTask);
     }
 
     /**
@@ -47,7 +58,7 @@ public class ImportTaskService {
             CacheKeys.TERM_COURSE_LIST
     })
     @NotNull
-    public CaptureTask startImport(String taskId) {
+    public CaptureTask start(String taskId) {
 
         CaptureTask captureTask = captureTaskRepository.findById(taskId).orElse(null);
         if (captureTask == null) throw new BusinessException("task_not_found");
@@ -58,45 +69,17 @@ public class ImportTaskService {
 
         importTask.setTermCode(captureTask.getTermCode());
         importTask.setTermName(importTask.getTermName());
+        importTask.setDataPath(dataFolder.getDomainPath());
+        importTask.setCreateDate(new Date());
 
-        Runnable importTask = () -> {
-            logger.info("Importing of {} started.", captureTask.getId());
-            caterpillarMonitorPlugin.increaseCaptureTaskCount();
+        taskExecutor.execute(new CourseDataImportTask(
+                this,
+                courseInfoService,
+                save(importTask),
+                caterpillarMonitorStore,
+                dataFolder
+        ));
 
-            mongoTemplate.getCollection(mongoTemplate.getCollectionName(CourseEntity.class))
-                    .deleteMany(new Document("term", captureTask.getTermName()));
-            logger.info("Records of {} deleted. If task failed, it will not be revert.", captureTask.getTermName());
-
-            ArrayList<String> succeedEntity = new ArrayList<>();
-
-            try {
-                File folder = fileManageService.contextOf(taskId).getFile();
-                if (!folder.isDirectory()) throw new BusinessException("temp_dir_not_found");
-
-                for (File file : Objects.requireNonNull(folder.listFiles())) {
-                    CourseEntity courseEntity = JSON.read(new FileInputStream(file), CourseEntity.class);
-
-                    succeedEntity.add(courseInfoService.save(courseEntity).getId());
-                }
-
-                captureTask.setFinished(true);
-                captureTaskRepository.save(captureTask);
-
-                logger.info("Importing of {} succeed", captureTask.getId());
-
-            } catch (IOException e) {
-                logger.error("Something happen while importing files, reversing...", e);
-                succeedEntity.forEach(courseInfoService::delete);
-                logger.warn("Reversing of task {} completed.", captureTask.getId());
-            } finally {
-                caterpillarMonitorPlugin.decreaseCaptureTaskCount();
-            }
-
-        };
-
-        taskExecutor.execute(importTask);
-        captureTask.setStage(CaptureTaskStage.IMPORT);
-        captureTaskRepository.save(captureTask);
         return captureTask;
     }
 

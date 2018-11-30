@@ -1,37 +1,37 @@
 package com.shinonometn.re.ssim.service.statistics.plugin;
 
-import com.shinonometn.re.ssim.service.commons.InMemoryStoreManagement;
+import com.shinonometn.re.ssim.service.commons.InMemoryStoreAdapter;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Component;
 
 @Component
-public class VisitorCounterPlugin extends InMemoryStoreManagement {
+public class VisitorCounterStore extends InMemoryStoreAdapter {
 
     private final ValueOperations<String, String> operations;
 
-    private final String cacheKey = cacheKey();
+    private final String storeKey = cacheKey();
 
-    public VisitorCounterPlugin(StringRedisTemplate template) {
-        super(template, "counter-visitor");
+    public VisitorCounterStore(StringRedisTemplate template) {
+        super(template, "counter.visitor");
         operations = template.opsForValue();
     }
 
     @Override
-    protected void clear() {
+    public void clear() {
         operations.set(domain(), "0");
     }
 
     public void increase() {
-        operations.setIfAbsent(cacheKey, "0");
-        operations.increment(cacheKey, 1);
+        operations.setIfAbsent(storeKey, "0");
+        operations.increment(storeKey, 1);
     }
 
     @NotNull
     public Long get() {
-        operations.setIfAbsent(cacheKey, "0");
-        return Long.valueOf(operations.get(cacheKey));
+        operations.setIfAbsent(storeKey, "0");
+        return Long.valueOf(operations.get(storeKey));
     }
 
 }

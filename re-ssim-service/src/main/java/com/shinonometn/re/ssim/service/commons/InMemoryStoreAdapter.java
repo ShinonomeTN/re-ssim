@@ -3,7 +3,7 @@ package com.shinonometn.re.ssim.service.commons;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
-public abstract class InMemoryStoreManagement {
+public abstract class InMemoryStoreAdapter implements InMemoryStore {
 
     @Value("${app.inMemoryDataKey:app\\:store}")
     private String keyPrefix = "app:store";
@@ -12,16 +12,20 @@ public abstract class InMemoryStoreManagement {
 
     protected final StringRedisTemplate redisTemplate;
 
-    protected InMemoryStoreManagement(StringRedisTemplate redisTemplate, String domain) {
+    protected InMemoryStoreAdapter(StringRedisTemplate redisTemplate, String domain) {
         this.redisTemplate = redisTemplate;
         this.domain = domain;
     }
 
+    @Override
     public final String domain() {
         return domain;
     }
 
-    protected abstract void clear();
+    @Override
+    public void clear() {
+        redisTemplate.delete(cacheKey());
+    }
 
     protected String cacheKey() {
         return keyPrefix + ":" + domain();

@@ -1,6 +1,6 @@
 package com.shinonometn.re.ssim.service.courses.entity
 
-import com.shinonometn.re.ssim.commons.SchoolCalendar
+import com.shinonometn.re.ssim.service.caterpillar.common.SchoolCalendar
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import java.beans.Transient
@@ -19,7 +19,7 @@ class SchoolCalendarEntity {
     var createTime: Date? = null
 
     @Transient
-    fun fromSchoolCalendar(schoolCalendar: com.shinonometn.re.ssim.commons.SchoolCalendar) {
+    fun fromSchoolCalendar(schoolCalendar: SchoolCalendar) {
         this.term = schoolCalendar.name
         this.startDate = Date.from(schoolCalendar.startDate.atZone(ZoneId.systemDefault()).toInstant())
         this.endDate = Date.from(schoolCalendar.endDate.atZone(ZoneId.systemDefault()).toInstant())

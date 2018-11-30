@@ -1,6 +1,6 @@
-package com.shinonometn.re.ssim.service.caterpillar.commons;
+package com.shinonometn.re.ssim.service.caterpillar.plugin;
 
-import com.shinonometn.re.ssim.service.commons.InMemoryStoreManagement;
+import com.shinonometn.re.ssim.service.commons.InMemoryStoreAdapter;
 import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 import java.util.Map;
 
 @Component
-public class CaterpillarMonitorPlugin extends InMemoryStoreManagement {
+public class CaterpillarMonitorStore extends InMemoryStoreAdapter {
 
     private final HashOperations<String, String, String> store = redisTemplate.opsForHash();
     private final String cacheKey = cacheKey();
@@ -16,8 +16,8 @@ public class CaterpillarMonitorPlugin extends InMemoryStoreManagement {
     private final static String KEY_CAPTURE_TASKS_COUNT = "captureTaskCount";
     private final static String KEY_IMPORT_TASK_COUNT = "importTaskCount";
 
-    protected CaterpillarMonitorPlugin(StringRedisTemplate redisTemplate) {
-        super(redisTemplate, "monitor-caterpillar");
+    protected CaterpillarMonitorStore(StringRedisTemplate redisTemplate) {
+        super(redisTemplate, "monitor.caterpillar");
     }
 
     public void increaseCaptureTaskCount() {
@@ -27,13 +27,6 @@ public class CaterpillarMonitorPlugin extends InMemoryStoreManagement {
 
     public void decreaseCaptureTaskCount() {
         store.increment(cacheKey, KEY_CAPTURE_TASKS_COUNT, -1);
-    }
-
-
-
-    @Override
-    protected void clear() {
-
     }
 
     public Integer getImportTaskCount() {

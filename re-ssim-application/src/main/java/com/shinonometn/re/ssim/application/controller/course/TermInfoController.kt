@@ -2,17 +2,14 @@ package com.shinonometn.re.ssim.application.controller.course
 
 import com.shinonometn.re.ssim.commons.CacheKeys
 import com.shinonometn.re.ssim.service.courses.CourseInfoService
+import com.shinonometn.re.ssim.service.courses.plugin.TermMeta
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.data.mongodb.core.aggregation.Aggregation.*
 import org.springframework.data.mongodb.core.query.Criteria
-import org.springframework.stereotype.Controller
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.ResponseBody
+import org.springframework.web.bind.annotation.*
 
-@Controller
+@RestController
 @RequestMapping("/api/term")
 open class TermInfoController @Autowired
 constructor(private val courseInfoService: CourseInfoService) {
@@ -23,15 +20,7 @@ constructor(private val courseInfoService: CourseInfoService) {
      *
      */
     @GetMapping
-    @ResponseBody
-    @Cacheable(CacheKeys.TERM_LIST)
-    open fun list(): Any = courseInfoService.executeAggregation(newAggregation(
-            project("term"),
-            group("term").count().`as`("courseCount"),
-            project("courseCount")
-                    .and("_id").`as`("name")
-                    .andExclude("_id")
-    )).mappedResults
+    open fun list(): Map<String, TermMeta> = courseInfoService.termList()
 
     /**
      *

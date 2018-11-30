@@ -1,12 +1,12 @@
 package com.shinonometn.re.ssim.service.statistics
 
-import com.shinonometn.re.ssim.service.statistics.plugin.VisitorCounterPlugin
+import com.shinonometn.re.ssim.service.statistics.plugin.VisitorCounterStore
 import org.springframework.stereotype.Service
 
 @Service
-class StatisticsService(private val visitorCounterPlugin: VisitorCounterPlugin) {
+class StatisticsService(private val visitorCounterStore: VisitorCounterStore) {
 
-    fun increaseVisitorCount() = visitorCounterPlugin.increase()
+    fun increaseVisitorCount() = visitorCounterStore.increase()
 
-    fun getVisitorCounts() = visitorCounterPlugin.get()
+    fun getVisitorCounts() = visitorCounterStore.get()
 }

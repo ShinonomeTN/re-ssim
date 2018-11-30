@@ -5,7 +5,7 @@ import com.shinonometn.re.ssim.commons.CacheKeys;
 import com.shinonometn.re.ssim.commons.JSON;
 import com.shinonometn.re.ssim.commons.file.fundation.FileContext;
 import com.shinonometn.re.ssim.service.caterpillar.commons.CaptureTaskStage;
-import com.shinonometn.re.ssim.service.caterpillar.commons.CaterpillarMonitorPlugin;
+import com.shinonometn.re.ssim.service.caterpillar.plugin.CaterpillarMonitorStore;
 import com.shinonometn.re.ssim.service.caterpillar.entity.CaptureTask;
 import com.shinonometn.re.ssim.service.caterpillar.entity.CaptureTaskDetails;
 import com.shinonometn.re.ssim.service.caterpillar.entity.CaterpillarSetting;
@@ -14,13 +14,10 @@ import com.shinonometn.re.ssim.service.caterpillar.kingo.capture.*;
 import com.shinonometn.re.ssim.service.caterpillar.kingo.pojo.Course;
 import com.shinonometn.re.ssim.service.caterpillar.repository.CaptureTaskRepository;
 import com.shinonometn.re.ssim.service.courses.CourseInfoService;
-import com.shinonometn.re.ssim.service.courses.entity.CourseEntity;
-import org.bson.Document;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.core.task.TaskExecutor;
@@ -34,9 +31,7 @@ import us.codecraft.webmagic.model.HttpRequestBody;
 import us.codecraft.webmagic.utils.HttpConstant;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -52,21 +47,21 @@ public class CaterpillarTaskService {
     private final SpiderMonitor spiderMonitor;
     private final TaskExecutor taskExecutor;
 
-    private final CaterpillarMonitorPlugin caterpillarMonitorPlugin;
+    private final CaterpillarMonitorStore caterpillarMonitorStore;
 
     private final CaptureTaskRepository captureTaskRepository;
 
     public CaterpillarTaskService(CourseInfoService courseInfoService, CaterpillarFileManageService fileManageService,
                                   SpiderMonitor spiderMonitor,
                                   TaskExecutor taskExecutor,
-                                  CaterpillarMonitorPlugin caterpillarMonitorPlugin,
+                                  CaterpillarMonitorStore caterpillarMonitorStore,
                                   CaptureTaskRepository captureTaskRepository) {
         this.courseInfoService = courseInfoService;
 
         this.fileManageService = fileManageService;
         this.spiderMonitor = spiderMonitor;
         this.taskExecutor = taskExecutor;
-        this.caterpillarMonitorPlugin = caterpillarMonitorPlugin;
+        this.caterpillarMonitorStore = caterpillarMonitorStore;
         this.captureTaskRepository = captureTaskRepository;
     }
 
@@ -288,7 +283,7 @@ public class CaterpillarTaskService {
      * @return int
      */
     public Integer getImportingTaskCount() {
-        return caterpillarMonitorPlugin.getImportTaskCount();
+        return caterpillarMonitorStore.getImportTaskCount();
     }
 
     /**
@@ -407,7 +402,7 @@ public class CaterpillarTaskService {
 
     @NotNull
     public Map<String, String> dashBoard() {
-        return caterpillarMonitorPlugin.getAll();
+        return caterpillarMonitorStore.getAll();
     }
 
     public CaptureTask changeCaptureTaskStatus(CaptureTask captureTask, CaptureTaskStage status, String description) {
