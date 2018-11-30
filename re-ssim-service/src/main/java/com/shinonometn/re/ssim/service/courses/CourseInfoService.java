@@ -29,11 +29,19 @@ public class CourseInfoService {
      * @return
      */
     @Cacheable(CacheKeys.SERVER_STATUS_COURSES_COUNT)
-    public Boolean hasData(){
+    public Boolean hasData() {
         return courseRepository.count() > 0;
     }
 
     public AggregationResults<Document> executeAggregation(Aggregation aggregation) {
         return mongoTemplate.aggregate(aggregation, mongoTemplate.getCollectionName(CourseEntity.class), Document.class);
+    }
+
+    public CourseEntity save(CourseEntity courseEntity) {
+        return courseRepository.save(courseEntity);
+    }
+
+    public void delete(String id) {
+        courseRepository.deleteById(id);
     }
 }

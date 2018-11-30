@@ -16,6 +16,6 @@ class CaptureTask {
     var termName: String? = null
     var createDate: Date? = null
     var stage: CaptureTaskStage? = null
-    var finished: Boolean? = false
+    var finished: Boolean = false
 
 }

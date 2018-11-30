@@ -86,6 +86,12 @@
             <version>1.1-SNAPSHOT</version>
         </dependency>
 
+        <dependency>
+            <groupId>com.shinonometn</groupId>
+            <artifactId>snnmtn-web</artifactId>
+            <version>0.1-SNAPSHOT</version>
+        </dependency>
+
         <!-- Spring boot test-->
         <dependency>
             <groupId>org.springframework.boot</groupId>

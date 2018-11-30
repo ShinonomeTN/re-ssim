@@ -3,6 +3,7 @@ package com.shinonometn.re.ssim.service.caterpillar
 import java.util.Date
 
 interface SpiderStatus {
+
     val name: String
 
     val status: String

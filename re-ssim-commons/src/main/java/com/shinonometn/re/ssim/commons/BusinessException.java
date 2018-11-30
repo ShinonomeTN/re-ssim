@@ -1,6 +1,6 @@
 package com.shinonometn.re.ssim.commons;
 
-public class BusinessException extends Exception{
+public class BusinessException extends RuntimeException{
     private String error = "business_error";
 
     public BusinessException() {
@@ -28,5 +28,10 @@ public class BusinessException extends Exception{
 
     public void setError(String error) {
         this.error = error;
+    }
+
+    public BusinessException withError(String error){
+        this.error = error;
+        return this;
     }
 }

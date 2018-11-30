@@ -19,7 +19,8 @@ class CaterpillarProfileController(private val caterpillarProfileDataService: Ca
     @GetMapping
     @ApiDescription(title = "List all caterpillar profile", description = "List all caterpillar profiles")
     @RequiresPermissions("profile:caterpillar:list")
-    fun list(@PageableDefault pageable: Pageable): Page<CaterpillarSetting> = caterpillarProfileDataService.findAll(pageable)
+    fun list(@PageableDefault pageable: Pageable): Page<CaterpillarSetting> =
+            caterpillarProfileDataService.findAllByUser(WebSubjectUtils.currentUser().username!!, pageable)
 
     @PostMapping
     @ApiDescription(title = "Create a caterpillar profile", description = "Profile will binding to current user, reject if profile exists.")

@@ -15,6 +15,7 @@ public interface CaptureTaskDTO {
     Boolean getFinished();
     CaptureTaskStage getStage();
 
+
     @Value("#{@lingnanCourseService.getStatusByTask(target)}")
     SpiderStatus getSpiderStatus();
 

@@ -1,29 +1,32 @@
 package com.shinonometn.re.ssim.service.caterpillar;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.shinonometn.re.ssim.commons.BusinessException;
 import com.shinonometn.re.ssim.commons.CacheKeys;
+import com.shinonometn.re.ssim.commons.JSON;
+import com.shinonometn.re.ssim.commons.file.fundation.FileContext;
 import com.shinonometn.re.ssim.service.caterpillar.commons.CaptureTaskStage;
+import com.shinonometn.re.ssim.service.caterpillar.commons.CaterpillarMonitorPlugin;
 import com.shinonometn.re.ssim.service.caterpillar.entity.CaptureTask;
-import com.shinonometn.re.ssim.service.caterpillar.entity.CaptureTaskDTO;
+import com.shinonometn.re.ssim.service.caterpillar.entity.CaptureTaskDetails;
 import com.shinonometn.re.ssim.service.caterpillar.entity.CaterpillarSetting;
 import com.shinonometn.re.ssim.service.caterpillar.kingo.KingoUrls;
 import com.shinonometn.re.ssim.service.caterpillar.kingo.capture.*;
 import com.shinonometn.re.ssim.service.caterpillar.kingo.pojo.Course;
 import com.shinonometn.re.ssim.service.caterpillar.repository.CaptureTaskRepository;
+import com.shinonometn.re.ssim.service.courses.CourseInfoService;
 import com.shinonometn.re.ssim.service.courses.entity.CourseEntity;
-import com.shinonometn.re.ssim.service.courses.repository.CourseRepository;
+import org.apache.commons.io.FileUtils;
 import org.bson.Document;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.core.task.TaskExecutor;
-import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import us.codecraft.webmagic.Request;
 import us.codecraft.webmagic.Site;
@@ -32,46 +35,40 @@ import us.codecraft.webmagic.model.HttpRequestBody;
 import us.codecraft.webmagic.utils.HttpConstant;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Service
-public class LingnanCourseService {
+public class CaterpillarTaskService {
 
-    private Logger logger = LoggerFactory.getLogger("com.shinonometn.ssim.lingnanCourse");
+    private final Logger logger = LoggerFactory.getLogger(CaterpillarTaskService.class);
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
-
+    private final CourseInfoService courseInfoService;
+    private final CaterpillarFileManageService fileManageService;
     private final SpiderMonitor spiderMonitor;
-
-    private final CaptureTaskRepository captureTaskRepository;
-    private final CourseRepository courseRepository;
-    private final MongoTemplate mongoTemplate;
-
     private final TaskExecutor taskExecutor;
 
-    private final File tempDir = new File(System.getProperty("user.dir"), "_temp");
+    private final CaterpillarMonitorPlugin caterpillarMonitorPlugin;
 
-    private final AtomicInteger importingTaskCount = new AtomicInteger(0);
+    private final CaptureTaskRepository captureTaskRepository;
 
-    @Autowired
-    public LingnanCourseService(CaptureTaskRepository captureTaskRepository,
-                                SpiderMonitor spiderMonitor,
-                                CourseRepository courseRepository,
-                                MongoTemplate mongoTemplate,
-                                TaskExecutor taskExecutor) {
+    public CaterpillarTaskService(CourseInfoService courseInfoService, CaterpillarFileManageService fileManageService,
+                                  SpiderMonitor spiderMonitor,
+                                  TaskExecutor taskExecutor,
+                                  CaterpillarMonitorPlugin caterpillarMonitorPlugin,
+                                  CaptureTaskRepository captureTaskRepository) {
+        this.courseInfoService = courseInfoService;
 
-        this.captureTaskRepository = captureTaskRepository;
+        this.fileManageService = fileManageService;
         this.spiderMonitor = spiderMonitor;
-        this.courseRepository = courseRepository;
-        this.mongoTemplate = mongoTemplate;
         this.taskExecutor = taskExecutor;
-
+        this.caterpillarMonitorPlugin = caterpillarMonitorPlugin;
+        this.captureTaskRepository = captureTaskRepository;
     }
 
     /**
@@ -112,8 +109,12 @@ public class LingnanCourseService {
      *
      * @return task list
      */
-    public List<CaptureTaskDTO> listTasks() {
-        return captureTaskRepository.findAllProjected();
+    public Page<CaptureTaskDetails> listTasks(Pageable pageable) {
+        return captureTaskRepository.findAll(pageable).map(this::getTaskDetails);
+    }
+
+    public CaptureTaskDetails taskDetails(String id) {
+        return captureTaskRepository.findById(id).map(this::getTaskDetails).orElse(null);
     }
 
     /**
@@ -124,6 +125,7 @@ public class LingnanCourseService {
      */
     public CaptureTask createTask(String termCode) {
         CaptureTask captureTask = new CaptureTask();
+
         captureTask.setCreateDate(new Date());
         captureTask.setTermCode(termCode);
         captureTask.setTermName(getTermList().get(termCode));
@@ -138,15 +140,15 @@ public class LingnanCourseService {
      * @param taskId task id
      * @return task dto
      */
-    public CaptureTaskDTO stopTask(String taskId) {
-        Optional<CaptureTask> captureTaskResult = captureTaskRepository.findById(taskId);
-        if (!captureTaskResult.isPresent()) return null;
+    public CaptureTaskDetails stopTask(String taskId) {
+        CaptureTask captureTask = captureTaskRepository.findById(taskId).orElse(null);
+        if (captureTask == null) return null;
 
         SpiderStatus spiderStatus = spiderMonitor.getSpiderStatus().get(taskId);
-        if (spiderStatus == null) throw new IllegalStateException("task_not_capturing");
+        if (spiderStatus == null) throw new BusinessException("task_have_not_initialized");
         spiderStatus.stop();
 
-        return captureTaskRepository.findProjectedById(taskId);
+        return captureTaskRepository.findById(taskId).map(this::getTaskDetails).orElse(null);
     }
 
     /**
@@ -155,18 +157,16 @@ public class LingnanCourseService {
      * @param taskId task id
      * @return dto
      */
-    public CaptureTaskDTO resumeTask(String taskId) {
-        Optional<CaptureTask> captureTaskResult = captureTaskRepository.findById(taskId);
-        if (!captureTaskResult.isPresent()) return null;
+    public CaptureTaskDetails resumeTask(String taskId) {
+        CaptureTaskDetails captureTaskDetails = captureTaskRepository.findById(taskId).map(this::getTaskDetails).orElse(null);
+        if (captureTaskDetails == null) return null;
 
-        CaptureTaskDTO dto = captureTaskRepository.findProjectedById(taskId);
+        SpiderStatus spiderStatus = captureTaskDetails.getRunningTaskStatus();
+        if (spiderStatus == null) throw new BusinessException("task_have_not_initialized");
 
-        if (dto.getSpiderStatus() == null)
-            throw new IllegalStateException("spider_not_exist");
+        spiderStatus.start();
 
-        dto.getSpiderStatus().start();
-
-        return dto;
+        return captureTaskDetails;
     }
 
     /**
@@ -177,45 +177,44 @@ public class LingnanCourseService {
      * @param taskId task id
      * @return dto
      */
-    public CaptureTaskDTO startTask(String taskId, CaterpillarSetting caterpillarSetting) {
-        Optional<CaptureTask> captureTaskResult = captureTaskRepository.findById(taskId);
-        if (!captureTaskResult.isPresent()) return null;
+    public CaptureTaskDetails startTask(String taskId, CaterpillarSetting caterpillarSetting) {
 
-        CaptureTaskDTO dto = captureTaskRepository.findProjectedById(taskId);
+        CaptureTaskDetails captureTaskDetails = captureTaskRepository
+                .findById(taskId)
+                .map(this::getTaskDetails)
+                .orElseThrow(() -> new BusinessException("task_not_exists"));
 
-        if (dto.getSpiderStatus() != null)
-            throw new IllegalStateException("spider_exist");
+        if (captureTaskDetails.getRunningTaskStatus() != null) throw new IllegalStateException("spider_exist");
 
         Site site = doLogin(caterpillarSetting);
 
-        File tempFolder = getTempDir(taskId);
+        FileContext dataFolder = fileManageService.contextOf(taskId);
+
         Spider spider = Spider.create(new CourseDetailsPageProcessor(site))
                 .addPipeline((resultItems, task) -> {
                     try {
                         Course course = CourseDetailsPageProcessor.getSubject(resultItems);
-                        objectMapper.writeValue(
-                                new FileOutputStream(new File(tempFolder, Objects.requireNonNull(course.getCode()))),
-                                course);
-                    } catch (Exception ignore) {
-
+                        JSON.write(new FileOutputStream(new File(dataFolder.getFile(), Objects.requireNonNull(course.getCode()))), course);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
                     }
                 })
                 .setUUID(taskId)
                 .thread(caterpillarSetting.getThreads());
 
-        spider.startRequest(fetchTermList(site, captureTaskResult.get().getTermCode()).stream()
-                .map(id -> createSubjectRequest(site, captureTaskResult.get().getTermCode(), id))
+        spider.startRequest(fetchTermList(site, captureTaskDetails.getTaskInfo().getTermCode())
+                .stream()
+                .map(id -> createSubjectRequest(site, captureTaskDetails.getTaskInfo().getTermCode(), id))
                 .collect(Collectors.toList()));
 
         spiderMonitor.register(spider);
 
         spider.start();
 
-        CaptureTask task = captureTaskResult.get();
-        task.setStage(CaptureTaskStage.CAPTURE);
-        captureTaskRepository.save(task);
+        captureTaskDetails.getTaskInfo().setStage(CaptureTaskStage.CAPTURE);
+        captureTaskRepository.save(captureTaskDetails.getTaskInfo());
 
-        return dto;
+        return captureTaskDetails;
     }
 
 
@@ -236,13 +235,18 @@ public class LingnanCourseService {
      */
     public void deleteTask(String id) {
         Map<String, SpiderStatus> spiderStatusMap = spiderMonitor.getSpiderStatus();
+
         if (spiderStatusMap.containsKey(id)) {
 
             SpiderStatus spiderStatus = spiderStatusMap.get(id);
-            if (spiderStatus.getStatus().equals("Running")) throw new IllegalStateException("spider_running");
+            if (spiderStatus.getStatus().equals("Running")) throw new BusinessException("spider_running");
 
             spiderStatusMap.remove(id);
         }
+
+        FileContext fileContext = fileManageService.contextOf(id);
+        if(fileContext.exists()) //noinspection ResultOfMethodCallIgnored
+            fileContext.getFile().delete();
 
         captureTaskRepository.deleteById(id);
     }
@@ -250,50 +254,49 @@ public class LingnanCourseService {
     /**
      * Start importing data to database
      *
-     * @param captureTaskDTO task
+     * @param taskId taskId
      * @return task base info
      */
     @CacheEvict({
             CacheKeys.TERM_COURSE_LIST
     })
-    public CaptureTask importSubjectData(CaptureTaskDTO captureTaskDTO) {
+    @NotNull
+    public CaptureTask importSubjectData(String taskId) {
 
-        Optional<CaptureTask> captureTaskResult = captureTaskRepository.findById(captureTaskDTO.getId());
-        if (!captureTaskResult.isPresent()) throw new IllegalStateException("What the hell, where is this task?????");
-        CaptureTask captureTask = captureTaskResult.get();
+        CaptureTask captureTask = captureTaskRepository.findById(taskId).orElse(null);
+        if (captureTask == null) throw new BusinessException("task_not_found");
 
         Runnable importTask = () -> {
-            logger.info("Importing of {} started.", captureTaskDTO.getId());
-            importingTaskCount.incrementAndGet();
+            logger.info("Importing of {} started.", captureTask.getId());
+            caterpillarMonitorPlugin.increaseCaptureTaskCount();
 
             mongoTemplate.getCollection(mongoTemplate.getCollectionName(CourseEntity.class))
-                    .deleteMany(new Document("term", captureTaskDTO.getTermName()));
-            logger.info("Records of {} deleted. If task failed, it will not be revert.", captureTaskDTO.getTermName());
+                    .deleteMany(new Document("term", captureTask.getTermName()));
+            logger.info("Records of {} deleted. If task failed, it will not be revert.", captureTask.getTermName());
 
             ArrayList<String> succeedEntity = new ArrayList<>();
 
             try {
-                File folder = new File(captureTaskDTO.getTempDir());
-                if (!folder.isDirectory()) throw new IllegalStateException("???Why the file IS NOT a folder???");
+                File folder = fileManageService.contextOf(taskId).getFile();
+                if (!folder.isDirectory()) throw new BusinessException("temp_dir_not_found");
 
                 for (File file : Objects.requireNonNull(folder.listFiles())) {
-                    CourseEntity courseEntity = objectMapper.readValue(file, new TypeReference<CourseEntity>() {
-                    });
+                    CourseEntity courseEntity = JSON.read(new FileInputStream(file), CourseEntity.class);
 
-                    succeedEntity.add(courseRepository.save(courseEntity).getId());
+                    succeedEntity.add(courseInfoService.save(courseEntity).getId());
                 }
 
                 captureTask.setFinished(true);
                 captureTaskRepository.save(captureTask);
 
-                logger.info("Importing of {} succeed", captureTaskDTO.getId());
+                logger.info("Importing of {} succeed", captureTask.getId());
 
             } catch (IOException e) {
                 logger.error("Something happen while importing files, reversing...", e);
-                succeedEntity.forEach(courseRepository::deleteById);
-                logger.warn("Reversing of task {} completed.", captureTaskDTO.getId());
+                succeedEntity.forEach(courseInfoService::delete);
+                logger.warn("Reversing of task {} completed.", captureTask.getId());
             } finally {
-                importingTaskCount.decrementAndGet();
+                caterpillarMonitorPlugin.decreaseCaptureTaskCount();
             }
 
         };
@@ -316,7 +319,7 @@ public class LingnanCourseService {
      * @return int
      */
     public Integer getImportingTaskCount() {
-        return importingTaskCount.get();
+        return caterpillarMonitorPlugin.getImportTaskCount();
     }
 
     /**
@@ -328,33 +331,6 @@ public class LingnanCourseService {
         return spiderMonitor.getSpiderStatus().values().stream().filter(i -> i.getStatus().equals("Running")).count();
     }
 
-    /*
-
-        DTO methods
-
-     */
-
-    /**
-     * Get task temp dir
-     *
-     * @param captureTask task
-     * @return string path
-     */
-    public String getTaskDir(CaptureTask captureTask) {
-        return new File(tempDir, Objects.requireNonNull(captureTask.getId())).getAbsolutePath();
-    }
-
-    /**
-     * Get task status from spider status
-     *
-     * @param captureTask task
-     * @return task status if exist, otherwise null
-     */
-    public SpiderStatus getStatusByTask(CaptureTask captureTask) {
-        if (captureTask.getId() == null) return null;
-        return spiderMonitor.getSpiderStatus().get(captureTask.getId());
-    }
-
     /**
      * Get a task dto by id
      *
@@ -362,8 +338,8 @@ public class LingnanCourseService {
      * @return dto
      */
     @Nullable
-    public CaptureTaskDTO queryTask(@NotNull String id) {
-        return captureTaskRepository.findProjectedById(id);
+    public CaptureTaskDetails queryTask(@NotNull String id) {
+        return captureTaskRepository.findById(id).map(this::getTaskDetails).orElse(null);
     }
 
     /*
@@ -371,6 +347,13 @@ public class LingnanCourseService {
       Private procedure
 
      */
+
+    private CaptureTaskDetails getTaskDetails(CaptureTask captureTask) {
+        CaptureTaskDetails captureTaskDetails = new CaptureTaskDetails();
+        captureTaskDetails.setTaskInfo(captureTask);
+        captureTaskDetails.setRunningTaskStatus(spiderMonitor.getSpiderStatus().get(captureTask.getId()));
+        return captureTaskDetails;
+    }
 
     private Collection<String> fetchTermList(Site site, String termCode) {
         Map<String, String> termList = new HashMap<>();
@@ -391,23 +374,6 @@ public class LingnanCourseService {
         File[] files = file.listFiles();
         if (files != null) Stream.of(files).forEach(File::delete);
         return file;
-    }
-
-    @Deprecated
-    private boolean notLogin(Site site) {
-        AtomicBoolean isLogin = new AtomicBoolean(false);
-
-        Request request = new Request(KingoUrls.classInfoQueryPage);
-        request.addHeader("Referer", KingoUrls.classInfoQueryPage);
-
-        Spider.create(new LoginStatusPageProcessor(site))
-                .addRequest(request)
-                .addPipeline((resultItems, task) -> isLogin.set(LoginStatusPageProcessor.getIsLogin(resultItems)))
-                .run();
-
-        logger.debug("Login status {}", isLogin.get() ? "valid" : "invalid");
-
-        return !isLogin.get();
     }
 
     private Site doLogin(CaterpillarSetting caterpillarSetting) {
@@ -468,5 +434,10 @@ public class LingnanCourseService {
 
         return request;
 
+    }
+
+    @NotNull
+    public Map<String,String> dashBoard() {
+        return caterpillarMonitorPlugin.getAll();
     }
 }

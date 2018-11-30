@@ -2,10 +2,11 @@ package com.shinonometn.re.ssim.service.caterpillar.repository
 
 import com.shinonometn.re.ssim.service.caterpillar.entity.CaptureTask
 import com.shinonometn.re.ssim.service.caterpillar.entity.CaptureTaskDTO
+import org.springframework.data.mongodb.repository.MongoRepository
 import org.springframework.data.mongodb.repository.Query
 import org.springframework.data.repository.CrudRepository
 
-interface CaptureTaskRepository : CrudRepository<CaptureTask, String> {
+interface CaptureTaskRepository : MongoRepository<CaptureTask, String> {
 
     @Query("{}")
     fun findAllProjected(): List<CaptureTaskDTO>

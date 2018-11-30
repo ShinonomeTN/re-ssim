@@ -9,9 +9,10 @@ import java.util.*
 
 @Service
 class CaterpillarDataService(private val caterpillarSettingRepository: CaterpillarSettingRepository) {
-    fun findProfile(username: String, name: String): Optional<CaterpillarSetting> = caterpillarSettingRepository.findByOwnerAndName(username,name);
+    fun findProfile(username: String, name: String): Optional<CaterpillarSetting> = caterpillarSettingRepository.findByOwnerAndName(username, name)
     fun save(caterpillarSetting: CaterpillarSetting) = caterpillarSettingRepository.save(caterpillarSetting)
     fun findAll(pageable: Pageable): Page<CaterpillarSetting> = caterpillarSettingRepository.findAll(pageable)
+    fun findAllByUser(username: String, pageable: Pageable): Page<CaterpillarSetting> = caterpillarSettingRepository.findAllByOwner(username, pageable)
 
 
 }
