@@ -1,6 +1,7 @@
 package com.shinonometn.re.ssim.service.statistics.plugin;
 
 import com.shinonometn.re.ssim.service.commons.InMemoryStoreManagement;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Component;
@@ -23,13 +24,13 @@ public class VisitorCounterPlugin extends InMemoryStoreManagement {
     }
 
     public void increase() {
-        final String key = cacheKey;
-
-        operations.setIfAbsent(key, "0");
-        operations.increment(key, 1);
+        operations.setIfAbsent(cacheKey, "0");
+        operations.increment(cacheKey, 1);
     }
 
+    @NotNull
     public Long get() {
+        operations.setIfAbsent(cacheKey, "0");
         return Long.valueOf(operations.get(cacheKey));
     }
 

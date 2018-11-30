@@ -1,6 +1,9 @@
 package com.shinonometn.re.ssim.application.controller
 
 import com.shinonometn.re.ssim.application.security.AuthorityRequired
+import com.shinonometn.re.ssim.service.caterpillar.CaterpillarTaskService
+import com.shinonometn.re.ssim.service.courses.CourseInfoService
+import com.shinonometn.re.ssim.service.statistics.StatisticsService
 import com.shinonometn.re.ssim.services.CourseInfoService
 import com.shinonometn.re.ssim.services.LingnanCourseService
 import com.shinonometn.re.ssim.services.ManagementService
@@ -9,10 +12,10 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/api/server")
-class ServerStatusController(private val courseInfoService: com.shinonometn.re.ssim.services.CourseInfoService,
-                             private val lingnanCourseService: com.shinonometn.re.ssim.services.LingnanCourseService,
-                             private val managementService: com.shinonometn.re.ssim.services.ManagementService) {
+@RequestMapping("/server")
+class ServerStatusController(private val courseInfoService: CourseInfoService,
+                             private val statisticsService: StatisticsService,
+                             private val caterpillarTaskService: CaterpillarTaskService) {
 
     @GetMapping(params = ["hello"])
     fun announce(): Any = HashMap<String, Any>().apply {
@@ -20,8 +23,8 @@ class ServerStatusController(private val courseInfoService: com.shinonometn.re.s
 
         when {
             courseInfoService.hasData() -> this["db_available"] = true
-            lingnanCourseService.capturingTaskCount > 0 -> this["capturing"] = true
-            lingnanCourseService.importingTaskCount > 0 -> this["importing"] = true
+            caterpillarTaskService.capturingTaskCount> 0 -> this["capturing"] = true
+            caterpillarTaskService.importingTaskCount > 0 -> this["importing"] = true
         }
     }
 

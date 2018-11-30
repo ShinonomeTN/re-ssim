@@ -1,6 +1,6 @@
 package com.shinonometn.re.ssim.application.controller
 
-import com.shinonometn.re.ssim.services.CourseInfoService
+import com.shinonometn.re.ssim.service.courses.CourseInfoService
 import org.bson.Document
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.mongodb.core.aggregation.Aggregation.*
@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/api/term")
-class CourseQueryController(@Autowired private val courseInfoService: com.shinonometn.re.ssim.services.CourseInfoService) {
+class CourseQueryController(@Autowired private val courseInfoService: CourseInfoService) {
 
     /**
      *
@@ -53,10 +53,10 @@ class CourseQueryController(@Autowired private val courseInfoService: com.shinon
                     match(where("term").`is`(term)
                             .and("lessons.classAttend").`in`(clazz).also {
 
-                                // If exclude list specified
-                                if (excludedType != null)
-                                    it.and("lessons.classType").nin(excludedType)
-                            }),
+                        // If exclude list specified
+                        if (excludedType != null)
+                            it.and("lessons.classType").nin(excludedType)
+                    }),
 
                     // Explain records
                     unwind("lessons"),
@@ -89,9 +89,6 @@ class CourseQueryController(@Autowired private val courseInfoService: com.shinon
             )).mappedResults
 
 
-
-
-
     /**
      *
      * Query weeks of a class that has lessons
@@ -99,7 +96,7 @@ class CourseQueryController(@Autowired private val courseInfoService: com.shinon
      */
     @GetMapping("/{term}/teacher/{teacher}/weeks")
     fun showTeacherTermWeeks(@PathVariable("term") term: String,
-                           @PathVariable("teacher") teacher: String): Any? =
+                             @PathVariable("teacher") teacher: String): Any? =
             courseInfoService.executeAggregation(newAggregation(
                     project("term", "code", "name", "lessons"),
 
@@ -121,7 +118,7 @@ class CourseQueryController(@Autowired private val courseInfoService: com.shinon
      */
     @GetMapping("/{term}/teacher/{teacher}/course")
     fun queryTeacherWeekCourses(@PathVariable("term") term: String,
-                                @PathVariable("teacher")teacher: String,
+                                @PathVariable("teacher") teacher: String,
                                 @RequestParam("week") week: Int): Any =
             courseInfoService.executeAggregation(newAggregation(
 

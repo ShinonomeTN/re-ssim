@@ -1,7 +1,7 @@
 package com.shinonometn.re.ssim.application.controller
 
 import com.shinonometn.re.ssim.commons.CacheKeys
-import com.shinonometn.re.ssim.services.CourseInfoService
+import com.shinonometn.re.ssim.service.courses.CourseInfoService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.data.mongodb.core.aggregation.Aggregation.*
@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.ResponseBody
 @Controller
 @RequestMapping("/api/term")
 open class TermInfoController @Autowired
-constructor(private val courseInfoService: com.shinonometn.re.ssim.services.CourseInfoService) {
+constructor(private val courseInfoService: CourseInfoService) {
 
     /**
      *
