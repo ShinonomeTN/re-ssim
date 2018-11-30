@@ -3,7 +3,6 @@ package com.shinonometn.re.ssim.application.controller.management
 import com.shinonometn.re.ssim.application.configuration.preparation.endpoint.scanning.ApiDescription
 import com.shinonometn.re.ssim.application.security.WebSubjectUtils
 import com.shinonometn.re.ssim.commons.BusinessException
-import com.shinonometn.re.ssim.service.cache.CacheManageService
 import com.shinonometn.re.ssim.service.caterpillar.CaterpillarDataService
 import com.shinonometn.re.ssim.service.caterpillar.CaterpillarTaskService
 import com.shinonometn.re.ssim.service.caterpillar.entity.CaptureTask
@@ -50,7 +49,7 @@ open class CaterpillarTaskManageAPI(private val caterpillarTaskService: Caterpil
     @ApiDescription(title = "List all capture tasks", description = "List all capture tasks. If task is running, show progress")
     @RequiresPermissions("task:list")
     open fun taskList(@PageableDefault pageable: Pageable): Page<CaptureTaskDetails> {
-        return caterpillarTaskService.listTasks(pageable)
+        return caterpillarTaskService.list(pageable)
     }
 
     /**
@@ -65,7 +64,7 @@ open class CaterpillarTaskManageAPI(private val caterpillarTaskService: Caterpil
 
         val termList = caterpillarTaskService.termList
         if (!termList.containsKey(termCode)) throw BusinessException("term_unknown");
-        return caterpillarTaskService.createTask(termCode)
+        return caterpillarTaskService.create(termCode)
 
     }
 
@@ -84,7 +83,7 @@ open class CaterpillarTaskManageAPI(private val caterpillarTaskService: Caterpil
 
         val caterpillarSettings = caterpillarDataService.findProfile(username!!, profileName).orElseThrow { BusinessException("profile_not_found") }
 
-        return caterpillarTaskService.startTask(id, caterpillarSettings)
+        return caterpillarTaskService.start(id, caterpillarSettings)
 
     }
 
@@ -99,7 +98,7 @@ open class CaterpillarTaskManageAPI(private val caterpillarTaskService: Caterpil
     open fun stopTask(@PathVariable("id") id: String) {
 
         HashMap<String, Any>().apply {
-            val dto = caterpillarTaskService.stopTask(id)
+            val dto = caterpillarTaskService.stop(id)
             if (dto == null) {
                 this["error"] = "task_operate_failed"
                 this["message"] = "task_not_registered"
@@ -121,7 +120,7 @@ open class CaterpillarTaskManageAPI(private val caterpillarTaskService: Caterpil
     open fun resumeTask(@PathVariable("id") id: String) =
             HashMap<String, Any>().apply {
                 this["message"] = "success"
-                this["data"] = caterpillarTaskService.resumeTask(id)
+                this["data"] = caterpillarTaskService.resume(id)
             }
 
     /**
@@ -142,7 +141,7 @@ open class CaterpillarTaskManageAPI(private val caterpillarTaskService: Caterpil
         if (captureTaskDetails.runningTaskStatus != null && captureTaskDetails.runningTaskStatus!!.status == "Running")
             throw BusinessException("spider_running")
 
-        return caterpillarTaskService.importSubjectData(captureTaskDetails.taskInfo.id)
+        return caterpillarTaskService.startImport(captureTaskDetails.taskInfo.id)
     }
 
     /**
@@ -155,7 +154,7 @@ open class CaterpillarTaskManageAPI(private val caterpillarTaskService: Caterpil
     @ApiDescription(title = "Capture Tasks", description = "Delete a capture task.")
     @RequiresPermissions("task:delete")
     open fun deleteTask(@PathVariable("id") id: String): RexModel<Any>? {
-        caterpillarTaskService.deleteTask(id)
+        caterpillarTaskService.delete(id)
         return RexModel.success<Any>()
     }
 

@@ -15,7 +15,6 @@ import com.shinonometn.re.ssim.service.caterpillar.kingo.pojo.Course;
 import com.shinonometn.re.ssim.service.caterpillar.repository.CaptureTaskRepository;
 import com.shinonometn.re.ssim.service.courses.CourseInfoService;
 import com.shinonometn.re.ssim.service.courses.entity.CourseEntity;
-import org.apache.commons.io.FileUtils;
 import org.bson.Document;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -109,13 +108,19 @@ public class CaterpillarTaskService {
      *
      * @return task list
      */
-    public Page<CaptureTaskDetails> listTasks(Pageable pageable) {
+    public Page<CaptureTaskDetails> list(Pageable pageable) {
         return captureTaskRepository.findAll(pageable).map(this::getTaskDetails);
     }
 
-    public CaptureTaskDetails taskDetails(String id) {
-        return captureTaskRepository.findById(id).map(this::getTaskDetails).orElse(null);
-    }
+    /*
+     *
+     *
+     * Task management
+     *
+     *
+     *
+     *
+     * */
 
     /**
      * Create a term capture task with code
@@ -123,13 +128,15 @@ public class CaterpillarTaskService {
      * @param termCode term code
      * @return created task
      */
-    public CaptureTask createTask(String termCode) {
+    public CaptureTask create(String termCode) {
         CaptureTask captureTask = new CaptureTask();
 
         captureTask.setCreateDate(new Date());
         captureTask.setTermCode(termCode);
         captureTask.setTermName(getTermList().get(termCode));
-        captureTask.setStage(CaptureTaskStage.INITIALIZE);
+
+        captureTask.setStage(CaptureTaskStage.NONE);
+        captureTask.setStageReport("task_created");
 
         return captureTaskRepository.save(captureTask);
     }
@@ -140,13 +147,15 @@ public class CaterpillarTaskService {
      * @param taskId task id
      * @return task dto
      */
-    public CaptureTaskDetails stopTask(String taskId) {
+    public CaptureTaskDetails stop(String taskId) {
         CaptureTask captureTask = captureTaskRepository.findById(taskId).orElse(null);
         if (captureTask == null) return null;
 
         SpiderStatus spiderStatus = spiderMonitor.getSpiderStatus().get(taskId);
         if (spiderStatus == null) throw new BusinessException("task_have_not_initialized");
         spiderStatus.stop();
+
+        changeCaptureTaskStatus(captureTask, null, "task_has_been_stopped");
 
         return captureTaskRepository.findById(taskId).map(this::getTaskDetails).orElse(null);
     }
@@ -157,14 +166,16 @@ public class CaterpillarTaskService {
      * @param taskId task id
      * @return dto
      */
-    public CaptureTaskDetails resumeTask(String taskId) {
+    public CaptureTaskDetails resume(String taskId) {
         CaptureTaskDetails captureTaskDetails = captureTaskRepository.findById(taskId).map(this::getTaskDetails).orElse(null);
         if (captureTaskDetails == null) return null;
 
         SpiderStatus spiderStatus = captureTaskDetails.getRunningTaskStatus();
         if (spiderStatus == null) throw new BusinessException("task_have_not_initialized");
+        if (spiderStatus.equals(Spider.Status.Running.name())) throw new BusinessException("spider_running");
 
         spiderStatus.start();
+        changeCaptureTaskStatus(captureTaskDetails.getTaskInfo(), null, "task_resumed");
 
         return captureTaskDetails;
     }
@@ -177,46 +188,83 @@ public class CaterpillarTaskService {
      * @param taskId task id
      * @return dto
      */
-    public CaptureTaskDetails startTask(String taskId, CaterpillarSetting caterpillarSetting) {
+    public CaptureTaskDetails start(String taskId, CaterpillarSetting caterpillarSetting) {
 
         CaptureTaskDetails captureTaskDetails = captureTaskRepository
                 .findById(taskId)
                 .map(this::getTaskDetails)
                 .orElseThrow(() -> new BusinessException("task_not_exists"));
 
-        if (captureTaskDetails.getRunningTaskStatus() != null) throw new IllegalStateException("spider_exist");
+        if (captureTaskDetails.getRunningTaskStatus() != null) throw new BusinessException("task_thread_exists");
 
-        Site site = doLogin(caterpillarSetting);
+        CaptureTask captureTask = captureTaskDetails.getTaskInfo();
 
-        FileContext dataFolder = fileManageService.contextOf(taskId);
+        changeCaptureTaskStatus(captureTask, CaptureTaskStage.INITIALIZE, "task_initialing");
 
-        Spider spider = Spider.create(new CourseDetailsPageProcessor(site))
-                .addPipeline((resultItems, task) -> {
-                    try {
-                        Course course = CourseDetailsPageProcessor.getSubject(resultItems);
-                        JSON.write(new FileOutputStream(new File(dataFolder.getFile(), Objects.requireNonNull(course.getCode()))), course);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                })
-                .setUUID(taskId)
-                .thread(caterpillarSetting.getThreads());
+        taskExecutor.execute(() -> {
 
-        spider.startRequest(fetchTermList(site, captureTaskDetails.getTaskInfo().getTermCode())
-                .stream()
-                .map(id -> createSubjectRequest(site, captureTaskDetails.getTaskInfo().getTermCode(), id))
-                .collect(Collectors.toList()));
+            changeCaptureTaskStatus(captureTask, null, "login_to_kingo");
 
-        spiderMonitor.register(spider);
+            try {
+                Site site = doLogin(caterpillarSetting);
 
-        spider.start();
+                FileContext dataFolder = fileManageService.contextOf(taskId);
 
-        captureTaskDetails.getTaskInfo().setStage(CaptureTaskStage.CAPTURE);
-        captureTaskRepository.save(captureTaskDetails.getTaskInfo());
+                Spider spider = Spider.create(new CourseDetailsPageProcessor(site))
+                        .addPipeline((resultItems, task) -> {
+                            try {
+                                Course course = CourseDetailsPageProcessor.getSubject(resultItems);
+                                JSON.write(new FileOutputStream(new File(dataFolder.getFile(), Objects.requireNonNull(course.getCode()))), course);
+                            } catch (Exception e) {
+                                changeCaptureTaskStatus(captureTask, null, "failed:" + e.getMessage());
+                                throw new RuntimeException(e);
+                            }
+                        })
+                        .setUUID(taskId)
+                        .thread(caterpillarSetting.getThreads());
+
+                spider.startRequest(fetchTermList(site, captureTaskDetails.getTaskInfo().getTermCode())
+                        .stream()
+                        .map(id -> createSubjectRequest(site, captureTaskDetails.getTaskInfo().getTermCode(), id))
+                        .collect(Collectors.toList()));
+
+                spiderMonitor.register(spider);
+
+                spider.start();
+
+                changeCaptureTaskStatus(captureTask, CaptureTaskStage.CAPTURE, "downloading");
+
+            } catch (BusinessException e) {
+                changeCaptureTaskStatus(captureTask, null, "failed:" + e.getMessage());
+            }
+        });
 
         return captureTaskDetails;
     }
 
+
+    /**
+     * Delete a not running task
+     *
+     * @param id task id
+     */
+    public void delete(String id) {
+        Map<String, SpiderStatus> spiderStatusMap = spiderMonitor.getSpiderStatus();
+
+        if (spiderStatusMap.containsKey(id)) {
+
+            SpiderStatus spiderStatus = spiderStatusMap.get(id);
+            if (spiderStatus.getStatus().equals(Spider.Status.Running.name())) throw new BusinessException("spider_running");
+
+            spiderStatusMap.remove(id);
+        }
+
+        FileContext fileContext = fileManageService.contextOf(id);
+        if (fileContext.exists()) //noinspection ResultOfMethodCallIgnored
+            fileContext.getFile().delete();
+
+        captureTaskRepository.deleteById(id);
+    }
 
     /**
      * Check if caterpillar setting valid
@@ -224,87 +272,8 @@ public class CaterpillarTaskService {
      * @param caterpillarSetting settings
      * @return result
      */
-    public boolean isSettingValid(CaterpillarSetting caterpillarSetting) {
+    public boolean validateSettings(CaterpillarSetting caterpillarSetting) {
         return doLogin(caterpillarSetting) != null;
-    }
-
-    /**
-     * Delete a not running task
-     *
-     * @param id task id
-     */
-    public void deleteTask(String id) {
-        Map<String, SpiderStatus> spiderStatusMap = spiderMonitor.getSpiderStatus();
-
-        if (spiderStatusMap.containsKey(id)) {
-
-            SpiderStatus spiderStatus = spiderStatusMap.get(id);
-            if (spiderStatus.getStatus().equals("Running")) throw new BusinessException("spider_running");
-
-            spiderStatusMap.remove(id);
-        }
-
-        FileContext fileContext = fileManageService.contextOf(id);
-        if(fileContext.exists()) //noinspection ResultOfMethodCallIgnored
-            fileContext.getFile().delete();
-
-        captureTaskRepository.deleteById(id);
-    }
-
-    /**
-     * Start importing data to database
-     *
-     * @param taskId taskId
-     * @return task base info
-     */
-    @CacheEvict({
-            CacheKeys.TERM_COURSE_LIST
-    })
-    @NotNull
-    public CaptureTask importSubjectData(String taskId) {
-
-        CaptureTask captureTask = captureTaskRepository.findById(taskId).orElse(null);
-        if (captureTask == null) throw new BusinessException("task_not_found");
-
-        Runnable importTask = () -> {
-            logger.info("Importing of {} started.", captureTask.getId());
-            caterpillarMonitorPlugin.increaseCaptureTaskCount();
-
-            mongoTemplate.getCollection(mongoTemplate.getCollectionName(CourseEntity.class))
-                    .deleteMany(new Document("term", captureTask.getTermName()));
-            logger.info("Records of {} deleted. If task failed, it will not be revert.", captureTask.getTermName());
-
-            ArrayList<String> succeedEntity = new ArrayList<>();
-
-            try {
-                File folder = fileManageService.contextOf(taskId).getFile();
-                if (!folder.isDirectory()) throw new BusinessException("temp_dir_not_found");
-
-                for (File file : Objects.requireNonNull(folder.listFiles())) {
-                    CourseEntity courseEntity = JSON.read(new FileInputStream(file), CourseEntity.class);
-
-                    succeedEntity.add(courseInfoService.save(courseEntity).getId());
-                }
-
-                captureTask.setFinished(true);
-                captureTaskRepository.save(captureTask);
-
-                logger.info("Importing of {} succeed", captureTask.getId());
-
-            } catch (IOException e) {
-                logger.error("Something happen while importing files, reversing...", e);
-                succeedEntity.forEach(courseInfoService::delete);
-                logger.warn("Reversing of task {} completed.", captureTask.getId());
-            } finally {
-                caterpillarMonitorPlugin.decreaseCaptureTaskCount();
-            }
-
-        };
-
-        taskExecutor.execute(importTask);
-        captureTask.setStage(CaptureTaskStage.IMPORT);
-        captureTaskRepository.save(captureTask);
-        return captureTask;
     }
 
     /*
@@ -414,7 +383,7 @@ public class CaterpillarTaskService {
                 .run();
 
         logger.debug("Login to kingo {}.", (loginResult.get() ? "successful" : "failed"));
-        if (!loginResult.get()) throw new IllegalStateException("login_to_kingo_failed");
+        if (!loginResult.get()) throw new BusinessException("login_to_kingo_failed");
 
         return site;
 
@@ -437,7 +406,13 @@ public class CaterpillarTaskService {
     }
 
     @NotNull
-    public Map<String,String> dashBoard() {
+    public Map<String, String> dashBoard() {
         return caterpillarMonitorPlugin.getAll();
+    }
+
+    public CaptureTask changeCaptureTaskStatus(CaptureTask captureTask, CaptureTaskStage status, String description) {
+        if (status != null) captureTask.setStage(status);
+        if (description != null) captureTask.setStageReport(description);
+        return captureTaskRepository.save(captureTask);
     }
 }

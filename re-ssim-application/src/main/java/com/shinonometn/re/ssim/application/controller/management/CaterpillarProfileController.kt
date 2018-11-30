@@ -54,7 +54,7 @@ class CaterpillarProfileController(private val caterpillarProfileDataService: Ca
                 .orElseThrow { BusinessException("profile_not_found") }
 
         RexModel<Any>()
-                .withMessage(if (caterpillarTaskService.isSettingValid(caterpillarSetting)) "pass" else "failed")
+                .withMessage(if (caterpillarTaskService.validateSettings(caterpillarSetting)) "pass" else "failed")
     }
 
 }

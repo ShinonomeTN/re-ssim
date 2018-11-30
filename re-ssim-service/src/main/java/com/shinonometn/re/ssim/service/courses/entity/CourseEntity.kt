@@ -16,4 +16,6 @@ open class CourseEntity {
     var timeSpend: Double = 0.toDouble()//学时
     var point: Double? = null//学分
     var lessons: List<Lesson>? = null//课堂
+
+    var batchId: String? = null // Import batch
 }
