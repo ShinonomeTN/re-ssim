@@ -1,4 +1,4 @@
-package com.shinonometn.re.ssim.application.controller
+package com.shinonometn.re.ssim.application.controller.course
 
 import com.shinonometn.re.ssim.service.courses.CourseInfoService
 import org.bson.Document
@@ -8,7 +8,7 @@ import org.springframework.data.mongodb.core.query.Criteria.where
 import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("/api/term")
+@RequestMapping("/term")
 class CourseQueryController(@Autowired private val courseInfoService: CourseInfoService) {
 
     /**

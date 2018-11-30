@@ -1,4 +1,4 @@
-package com.shinonometn.re.ssim.application.controller
+package com.shinonometn.re.ssim.application.controller.course
 
 import com.shinonometn.re.ssim.commons.CacheKeys
 import com.shinonometn.re.ssim.service.courses.CourseInfoService

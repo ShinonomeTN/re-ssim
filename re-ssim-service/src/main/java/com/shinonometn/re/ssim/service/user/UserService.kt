@@ -1,14 +1,19 @@
 package com.shinonometn.re.ssim.service.user
 
+import com.shinonometn.re.ssim.service.user.entity.Permission
 import com.shinonometn.re.ssim.service.user.entity.User
+import com.shinonometn.re.ssim.service.user.entity.UserPermissionInfo
 import com.shinonometn.re.ssim.service.user.repository.UserRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import java.util.*
+import kotlin.collections.HashSet
 
 @Service
-class UserService(private val userRepository: UserRepository) {
+class UserService(private val userRepository: UserRepository,
+                  private val roleService: RoleService,
+                  private val permissionService: PermissionService) {
 
     fun save(user: User) = userRepository.save(user)
 
@@ -18,5 +23,25 @@ class UserService(private val userRepository: UserRepository) {
 
     fun findByUsername(username: String): Optional<User> = userRepository.findByUsername(username)
 
-    fun hasUser() : Boolean = userRepository.count() > 0
+    fun getUserPermissions(username: String): UserPermissionInfo {
+        val result = UserPermissionInfo()
+
+        val permission = permissionService.findByUser(username).orElse(Permission())
+        val stringPermissions = HashSet<String>()
+                .apply { addAll(permission.extraPermissions) }
+                .apply {
+                    addAll(permission
+                            .roles
+                            .map(roleService::findByName)
+                            .filter { it.isPresent }
+                            .flatMap { it.get().permissions })
+                }
+
+        result.permissions = stringPermissions
+        result.roles = permission.roles
+
+        return result
+    }
+
+    fun hasUser(): Boolean = userRepository.count() > 0
 }
