@@ -12,7 +12,7 @@ class PermissionService(private val permissionRepository: PermissionRepository,
 
     fun findByUser(username: String): Optional<Permission> = permissionRepository.findByUsername(username)
 
-    fun save(permission: Permission) = permissionRepository.save(permission.apply {
+    fun save(permission: Permission): Permission = permissionRepository.save(permission.apply {
         updateDate = Date()
     })
 }

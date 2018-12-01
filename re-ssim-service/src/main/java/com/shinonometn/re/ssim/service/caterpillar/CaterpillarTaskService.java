@@ -225,9 +225,9 @@ public class CaterpillarTaskService {
 
                 spiderMonitor.register(spider);
 
-                spider.start();
-
                 changeCaptureTaskStatus(captureTask, CaptureTaskStage.CAPTURE, "downloading");
+                spider.run();
+                changeCaptureTaskStatus(captureTask, CaptureTaskStage.STOPPED, "stopped");
 
             } catch (BusinessException e) {
                 changeCaptureTaskStatus(captureTask, null, "failed:" + e.getMessage());
@@ -395,11 +395,6 @@ public class CaterpillarTaskService {
 
         return request;
 
-    }
-
-    @NotNull
-    public Map<String, String> dashBoard() {
-        return caterpillarMonitorStore.getAll();
     }
 
     public CaptureTask changeCaptureTaskStatus(CaptureTask captureTask, CaptureTaskStage status, String description) {

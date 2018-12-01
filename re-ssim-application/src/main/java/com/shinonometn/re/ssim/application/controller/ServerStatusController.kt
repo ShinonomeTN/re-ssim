@@ -1,8 +1,10 @@
 package com.shinonometn.re.ssim.application.controller
 
+import com.shinonometn.re.ssim.application.configuration.preparation.endpoint.scanning.ApiDescription
 import com.shinonometn.re.ssim.service.caterpillar.CaterpillarTaskService
 import com.shinonometn.re.ssim.service.courses.CourseInfoService
 import com.shinonometn.re.ssim.service.statistics.StatisticsService
+import org.apache.shiro.authz.annotation.RequiresPermissions
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
@@ -24,9 +26,10 @@ class ServerStatusController(private val courseInfoService: CourseInfoService,
         }
     }
 
-//    @GetMapping(params = ["statistics"])
-//    @AuthorityRequired(name = "statistics:get", group = "Statistics", description = "Show visit statistics.")
-//    fun statistics(): Any = HashMap<String, Any>().apply {
-//        this["api_invoke"] = managementService.visitCount
-//    }
+    @GetMapping(params = ["statistics"])
+    @RequiresPermissions("statistics:get")
+    @ApiDescription(title = "Get api invoke count", description = "Show visit statistics.")
+    fun statistics(): Any = HashMap<String, Any>().apply {
+        this["api_invoke"] = statisticsService.getVisitorCounts()
+    }
 }

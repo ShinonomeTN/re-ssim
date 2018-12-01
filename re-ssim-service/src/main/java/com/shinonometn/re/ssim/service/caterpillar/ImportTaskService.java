@@ -3,6 +3,7 @@ package com.shinonometn.re.ssim.service.caterpillar;
 import com.shinonometn.re.ssim.commons.BusinessException;
 import com.shinonometn.re.ssim.commons.CacheKeys;
 import com.shinonometn.re.ssim.commons.file.fundation.FileContext;
+import com.shinonometn.re.ssim.service.caterpillar.commons.ImportTaskStatus;
 import com.shinonometn.re.ssim.service.caterpillar.entity.CaptureTask;
 import com.shinonometn.re.ssim.service.caterpillar.entity.ImportTask;
 import com.shinonometn.re.ssim.service.caterpillar.plugin.CaterpillarMonitorStore;
@@ -10,20 +11,22 @@ import com.shinonometn.re.ssim.service.caterpillar.repository.CaptureTaskReposit
 import com.shinonometn.re.ssim.service.caterpillar.repository.ImportTaskRepository;
 import com.shinonometn.re.ssim.service.caterpillar.task.CourseDataImportTask;
 import com.shinonometn.re.ssim.service.courses.CourseInfoService;
-import com.shinonometn.re.ssim.service.courses.entity.CourseEntity;
+import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Optional;
 
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
@@ -31,6 +34,8 @@ import static org.springframework.data.mongodb.core.query.Query.query;
 
 @Service
 public class ImportTaskService {
+
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private final CaptureTaskRepository captureTaskRepository;
     private final ImportTaskRepository importTaskRepository;
@@ -47,7 +52,8 @@ public class ImportTaskService {
                              ImportTaskRepository importTaskRepository,
                              MongoTemplate mongoTemplate, CaterpillarFileManageService fileManageService,
                              CaterpillarMonitorStore caterpillarMonitorStore,
-                             CourseInfoService courseInfoService, TaskExecutor taskExecutor) {
+                             CourseInfoService courseInfoService,
+                             TaskExecutor taskExecutor) {
 
         this.captureTaskRepository = captureTaskRepository;
         this.importTaskRepository = importTaskRepository;
@@ -64,6 +70,25 @@ public class ImportTaskService {
 
     public ImportTask save(ImportTask importTask) {
         return importTaskRepository.save(importTask);
+    }
+
+    public void delete(String taskId){
+        ImportTask importTask = importTaskRepository
+                .findById(taskId)
+                .orElseThrow(() -> new BusinessException("import_task_not_exists"));
+
+        if(importTask.getStatus().equals(ImportTaskStatus.IMPORTING))
+            throw new BusinessException("import_task_running");
+
+        importTaskRepository.delete(importTask);
+
+        if(importTask.getCaptureTaskId() == null || !captureTaskRepository.existsById(importTask.getCaptureTaskId())) {
+            try {
+                FileUtils.deleteDirectory(fileManageService.contextOf(importTask.getCaptureTaskId()).getFile());
+            } catch (IOException e) {
+                logger.warn("Could not delete directory for import task " + taskId);
+            }
+        }
     }
 
     public boolean isCaptureTaskRelated(String captureTaskId) {
@@ -134,4 +159,8 @@ public class ImportTaskService {
         return captureTask;
     }
 
+    @NotNull
+    public Optional<ImportTask> findOne(@NotNull String id) {
+        return importTaskRepository.findById(id);
+    }
 }
