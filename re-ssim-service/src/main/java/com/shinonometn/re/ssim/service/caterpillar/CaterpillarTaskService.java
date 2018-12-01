@@ -5,13 +5,13 @@ import com.shinonometn.re.ssim.commons.CacheKeys;
 import com.shinonometn.re.ssim.commons.JSON;
 import com.shinonometn.re.ssim.commons.file.fundation.FileContext;
 import com.shinonometn.re.ssim.service.caterpillar.commons.CaptureTaskStage;
-import com.shinonometn.re.ssim.service.caterpillar.plugin.CaterpillarMonitorStore;
 import com.shinonometn.re.ssim.service.caterpillar.entity.CaptureTask;
 import com.shinonometn.re.ssim.service.caterpillar.entity.CaptureTaskDetails;
 import com.shinonometn.re.ssim.service.caterpillar.entity.CaterpillarSetting;
 import com.shinonometn.re.ssim.service.caterpillar.kingo.KingoUrls;
 import com.shinonometn.re.ssim.service.caterpillar.kingo.capture.*;
 import com.shinonometn.re.ssim.service.caterpillar.kingo.pojo.Course;
+import com.shinonometn.re.ssim.service.caterpillar.plugin.CaterpillarMonitorStore;
 import com.shinonometn.re.ssim.service.caterpillar.repository.CaptureTaskRepository;
 import com.shinonometn.re.ssim.service.courses.CourseInfoService;
 import org.jetbrains.annotations.NotNull;
@@ -249,14 +249,11 @@ public class CaterpillarTaskService {
         if (spiderStatusMap.containsKey(id)) {
 
             SpiderStatus spiderStatus = spiderStatusMap.get(id);
-            if (spiderStatus.getStatus().equals(Spider.Status.Running.name())) throw new BusinessException("spider_running");
+            if (spiderStatus.getStatus().equals(Spider.Status.Running.name()))
+                throw new BusinessException("spider_running");
 
             spiderStatusMap.remove(id);
         }
-
-        FileContext fileContext = fileManageService.contextOf(id);
-        if (fileContext.exists()) //noinspection ResultOfMethodCallIgnored
-            fileContext.getFile().delete();
 
         captureTaskRepository.deleteById(id);
     }

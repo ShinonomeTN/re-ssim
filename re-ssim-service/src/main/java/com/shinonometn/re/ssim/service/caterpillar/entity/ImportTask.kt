@@ -13,6 +13,8 @@ class ImportTask {
     @Id
     var id : String? = null
 
+    var captureTaskId : String? = null
+
     var dataPath : String? = null
 
     var status : ImportTaskStatus = ImportTaskStatus.NONE

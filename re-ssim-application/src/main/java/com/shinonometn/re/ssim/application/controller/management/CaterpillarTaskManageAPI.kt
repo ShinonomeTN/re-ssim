@@ -4,10 +4,14 @@ import com.shinonometn.re.ssim.application.configuration.preparation.endpoint.sc
 import com.shinonometn.re.ssim.application.security.WebSubjectUtils
 import com.shinonometn.re.ssim.commons.BusinessException
 import com.shinonometn.re.ssim.service.caterpillar.CaterpillarDataService
+import com.shinonometn.re.ssim.service.caterpillar.CaterpillarFileManageService
 import com.shinonometn.re.ssim.service.caterpillar.CaterpillarTaskService
+import com.shinonometn.re.ssim.service.caterpillar.ImportTaskService
 import com.shinonometn.re.ssim.service.caterpillar.entity.CaptureTask
 import com.shinonometn.re.ssim.service.caterpillar.entity.CaptureTaskDetails
+import com.shinonometn.re.ssim.service.caterpillar.entity.ImportTask
 import com.shiononometn.commons.web.RexModel
+import org.apache.commons.io.FileUtils
 import org.apache.shiro.authz.annotation.RequiresPermissions
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -18,7 +22,9 @@ import javax.servlet.http.HttpSession
 @RestController
 @RequestMapping("/caterpillar/task")
 open class CaterpillarTaskManageAPI(private val caterpillarTaskService: CaterpillarTaskService,
-                                    private val caterpillarDataService: CaterpillarDataService) {
+                                    private val caterpillarDataService: CaterpillarDataService,
+                                    private val dataImportTaskService: ImportTaskService,
+                                    private val caterpillarFileManageService: CaterpillarFileManageService) {
 
     /**
      *
@@ -45,7 +51,7 @@ open class CaterpillarTaskManageAPI(private val caterpillarTaskService: Caterpil
      * List all tasks
      *
      */
-    @GetMapping("/task")
+    @GetMapping("/capture")
     @ApiDescription(title = "List all capture tasks", description = "List all capture tasks. If task is running, show progress")
     @RequiresPermissions("task:list")
     open fun taskList(@PageableDefault pageable: Pageable): Page<CaptureTaskDetails> {
@@ -57,10 +63,10 @@ open class CaterpillarTaskManageAPI(private val caterpillarTaskService: Caterpil
      * create capture task
      *
      */
-    @PostMapping("/task")
+    @PostMapping("/capture")
     @ApiDescription(title = "Create a task", description = "Create a capture task.")
     @RequiresPermissions("task:create")
-    open fun createTask(@RequestParam("termCode") termCode: String): CaptureTask {
+    open fun create(@RequestParam("termCode") termCode: String): CaptureTask {
 
         val termList = caterpillarTaskService.termList
         if (!termList.containsKey(termCode)) throw BusinessException("term_unknown");
@@ -74,10 +80,10 @@ open class CaterpillarTaskManageAPI(private val caterpillarTaskService: Caterpil
      * Start a task
      *
      */
-    @PostMapping("/task/{id}", params = ["start"])
+    @PostMapping("/capture/{id}", params = ["start"])
     @ApiDescription(title = "Start a capture task", description = "Start a capture task.")
     @RequiresPermissions("task:start")
-    open fun startTask(@PathVariable("id") id: String, @RequestParam("profile") profileName: String, session: HttpSession): Any {
+    open fun start(@PathVariable("id") id: String, @RequestParam("profile") profileName: String, session: HttpSession): Any {
 
         val username = WebSubjectUtils.currentUser().username;
 
@@ -92,10 +98,10 @@ open class CaterpillarTaskManageAPI(private val caterpillarTaskService: Caterpil
      * Stop a capture task
      *
      */
-    @PostMapping("/task/{id}", params = ["stop"])
+    @PostMapping("/capture/{id}", params = ["stop"])
     @ApiDescription(title = "Stop a running task", description = "Stop a running capture task.")
     @RequiresPermissions("task:stop")
-    open fun stopTask(@PathVariable("id") id: String) {
+    open fun stop(@PathVariable("id") id: String) {
 
         HashMap<String, Any>().apply {
             val dto = caterpillarTaskService.stop(id)
@@ -114,10 +120,10 @@ open class CaterpillarTaskManageAPI(private val caterpillarTaskService: Caterpil
      * Resume task
      *
      */
-    @PostMapping("/task/{id}", params = ["resume"])
+    @PostMapping("/capture/{id}", params = ["resume"])
     @ApiDescription(title = "Resume a capture task", description = "Resume a capture task.")
     @RequiresPermissions("task:restart")
-    open fun resumeTask(@PathVariable("id") id: String) =
+    open fun resume(@PathVariable("id") id: String) =
             HashMap<String, Any>().apply {
                 this["message"] = "success"
                 this["data"] = caterpillarTaskService.resume(id)
@@ -125,36 +131,20 @@ open class CaterpillarTaskManageAPI(private val caterpillarTaskService: Caterpil
 
     /**
      *
-     * Start import task data to DB
-     *
-     */
-    @PostMapping("/task/{id}", params = ["import"])
-    @ResponseBody
-    @ApiDescription(title = "Import task data", description = "Import a finshed capture task.")
-    @RequiresPermissions("task:import")
-    open fun importTask(@PathVariable("id") id: String): CaptureTask {
-
-        val captureTaskDetails = caterpillarTaskService.queryTask(id) ?: throw BusinessException("task_not_found")
-
-        if (captureTaskDetails.taskInfo.finished) throw BusinessException("task_finished")
-
-        if (captureTaskDetails.runningTaskStatus != null && captureTaskDetails.runningTaskStatus!!.status == "Running")
-            throw BusinessException("spider_running")
-
-        return caterpillarTaskService.startImport(captureTaskDetails.taskInfo.id)
-    }
-
-    /**
-     *
      * Delete a task
      *
      */
-    @DeleteMapping("/task/{id}")
+    @DeleteMapping("/capture/{id}")
     @ResponseBody
     @ApiDescription(title = "Capture Tasks", description = "Delete a capture task.")
     @RequiresPermissions("task:delete")
-    open fun deleteTask(@PathVariable("id") id: String): RexModel<Any>? {
+    open fun delete(@PathVariable("id") id: String): RexModel<Any>? {
         caterpillarTaskService.delete(id)
+
+        if(!dataImportTaskService.isCaptureTaskRelated(id)){
+            FileUtils.deleteDirectory(caterpillarFileManageService.contextOf(id).file)
+        }
+
         return RexModel.success<Any>()
     }
 
@@ -168,4 +158,31 @@ open class CaterpillarTaskManageAPI(private val caterpillarTaskService: Caterpil
     @RequiresPermissions("dash.task:get")
     fun dashboard(): Map<String, String> = caterpillarTaskService.dashBoard()
 
+
+    /**
+     *
+     * Start import task data to DB
+     *
+     */
+    @PostMapping("/import/{id}")
+    @ApiDescription(title = "Import task data", description = "Import a finshed capture task.")
+    @RequiresPermissions("import:start")
+    open fun import(@PathVariable("id") id: String): CaptureTask {
+
+        val captureTaskDetails = caterpillarTaskService.queryTask(id) ?: throw BusinessException("task_not_found")
+
+        if (captureTaskDetails.taskInfo.finished) throw BusinessException("task_finished")
+
+        if (captureTaskDetails.runningTaskStatus != null && captureTaskDetails.runningTaskStatus!!.status == "Running")
+            throw BusinessException("spider_running")
+
+        return dataImportTaskService.start(captureTaskDetails.taskInfo.id)
+    }
+
+    @GetMapping("/import")
+    @ApiDescription(title = "Get import tasks", description = "Get all import tasks")
+    @RequiresPermissions("import:list")
+    open fun listImportings(@PageableDefault pageable: Pageable) : Page<ImportTask> {
+        return dataImportTaskService.list(pageable)
+    }
 }

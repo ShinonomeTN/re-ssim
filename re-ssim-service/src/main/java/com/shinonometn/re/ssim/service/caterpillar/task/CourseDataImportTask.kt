@@ -4,9 +4,9 @@ import com.shinonometn.re.ssim.commons.BusinessException
 import com.shinonometn.re.ssim.commons.JSON
 import com.shinonometn.re.ssim.commons.file.fundation.FileContext
 import com.shinonometn.re.ssim.service.caterpillar.ImportTaskService
-import com.shinonometn.re.ssim.service.caterpillar.plugin.CaterpillarMonitorStore
 import com.shinonometn.re.ssim.service.caterpillar.commons.ImportTaskStatus
 import com.shinonometn.re.ssim.service.caterpillar.entity.ImportTask
+import com.shinonometn.re.ssim.service.caterpillar.plugin.CaterpillarMonitorStore
 import com.shinonometn.re.ssim.service.courses.CourseInfoService
 import com.shinonometn.re.ssim.service.courses.entity.CourseEntity
 import org.slf4j.LoggerFactory
@@ -35,14 +35,15 @@ class CourseDataImportTask(private val importTaskService: ImportTaskService,
 
             loadDataToDatabase()
 
-            deleteOldData()
+            deleteOtherData()
 
             importTask.status = ImportTaskStatus.FINISHED
             importTask.statusReport = "finished"
+            importTask.finishDate = Date()
             importTaskService.save(importTask)
 
         } catch (e: IOException) {
-            logger.error("Something happen while importing files, reversing...", e)
+            logger.error("Something happen while importing files, reversing. Batch Id :$batchId", e)
             importTask.status = ImportTaskStatus.ERROR
             importTask.statusReport = Optional.ofNullable(e.message).orElse(e.javaClass.name)
             importTaskService.save(importTask)
@@ -53,8 +54,6 @@ class CourseDataImportTask(private val importTaskService: ImportTaskService,
     }
 
     private fun loadDataToDatabase() {
-        logger.info("Data import task {} : start load data to database", batchId)
-
         val folder = dataFolder.file
         if (!folder.isDirectory) throw BusinessException("temp_dir_not_found")
         Objects.requireNonNull<Array<File>>(folder.listFiles()).forEach { file ->
@@ -62,13 +61,21 @@ class CourseDataImportTask(private val importTaskService: ImportTaskService,
             courseEntity.batchId = batchId
             courseInfoService.save(courseEntity)
         }
+
+        logger.info("Batch data {} loading finished", batchId)
     }
 
-    private fun deleteOldData() {
+    private fun deleteOtherData() {
+        val deleteResult = courseInfoService.deleteOtherVersions(batchId)
 
+        logger.info("Other version deleted, total {} records, current version {}",
+                deleteResult.deletedCount,
+                batchId)
     }
 
     private fun cleanOnFail() {
+        val deleteResult = courseInfoService.deleteVersion(batchId)
 
+        logger.info("Failure import rolled back, total {} record(s)", deleteResult.deletedCount)
     }
 }

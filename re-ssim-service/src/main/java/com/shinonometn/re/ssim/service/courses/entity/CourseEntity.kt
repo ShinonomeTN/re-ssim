@@ -7,7 +7,7 @@ import org.springframework.data.mongodb.core.mapping.Document
 @Document
 open class CourseEntity {
 
-    @get:Id
+    @Id
     var id: String? = null
     var term: String? = null//学期
     var name: String? = null//课程名称
