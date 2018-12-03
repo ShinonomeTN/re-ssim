@@ -45,7 +45,7 @@ public class SchoolDate {
     @Override
     public String toString() {
         return "SchoolDate{" +
-                "term='" + term + '\'' +
+                "termName='" + term + '\'' +
                 ", week=" + week +
                 ", day=" + day +
                 '}';

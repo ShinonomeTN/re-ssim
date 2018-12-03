@@ -10,12 +10,12 @@ import java.util.Map;
 import java.util.Optional;
 
 @Component
-public class TermListStore extends InMemoryStoreAdapter {
+public class CourseTermListStore extends InMemoryStoreAdapter {
 
     private final String storeKey = cacheKey();
     private final HashOperations<String, String, TermMeta> store = redisTemplate.opsForHash();
 
-    protected TermListStore(StringRedisTemplate redisTemplate) {
+    protected CourseTermListStore(StringRedisTemplate redisTemplate) {
         super(redisTemplate, "term.info");
     }
 

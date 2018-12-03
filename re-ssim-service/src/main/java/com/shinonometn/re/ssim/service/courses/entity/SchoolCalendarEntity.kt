@@ -14,6 +14,7 @@ class SchoolCalendarEntity {
     var id: String? = null
 
     var term: String? = null
+    var termName: String? = null
     var startDate: Date? = null
     var endDate: Date? = null
     var createTime: Date? = null

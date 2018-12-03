@@ -4,7 +4,7 @@ import com.mongodb.client.result.DeleteResult;
 import com.shinonometn.re.ssim.commons.CacheKeys;
 import com.shinonometn.re.ssim.service.caterpillar.ImportTaskService;
 import com.shinonometn.re.ssim.service.courses.entity.CourseEntity;
-import com.shinonometn.re.ssim.service.courses.plugin.TermListStore;
+import com.shinonometn.re.ssim.service.courses.plugin.CourseTermListStore;
 import com.shinonometn.re.ssim.service.courses.plugin.structure.TermMeta;
 import com.shinonometn.re.ssim.service.courses.repository.CourseRepository;
 import org.bson.Document;
@@ -30,17 +30,17 @@ public class CourseInfoService {
     private final CourseRepository courseRepository;
     private final ImportTaskService importTaskService;
 
-    private final TermListStore termListStore;
+    private final CourseTermListStore courseTermListStore;
 
     @Autowired
     public CourseInfoService(MongoTemplate mongoTemplate,
                              CourseRepository courseRepository,
-                             ImportTaskService importTaskService, TermListStore termListStore) {
+                             ImportTaskService importTaskService, CourseTermListStore courseTermListStore) {
 
         this.mongoTemplate = mongoTemplate;
         this.courseRepository = courseRepository;
         this.importTaskService = importTaskService;
-        this.termListStore = termListStore;
+        this.courseTermListStore = courseTermListStore;
     }
 
     /**
@@ -92,21 +92,22 @@ public class CourseInfoService {
     }
 
     /**
-     * Get term list
+     * Get termName list
      *
-     * @return term list with meta
+     * @return termName list with meta
      */
 
+    @Deprecated
     public Map<String, TermMeta> termList() {
-        if (termListStore.isEmpty()) {
+        if (courseTermListStore.isEmpty()) {
             Map<String, TermMeta> queryResult = queryTermInfoList()
                     .stream()
                     .collect(Collectors.toMap(d -> d.getString("name"), this::termMetaFromDocument));
 
-            termListStore.putAll(queryResult);
+            courseTermListStore.putAll(queryResult);
             return queryResult;
         } else {
-            return termListStore.getAll();
+            return courseTermListStore.getAll();
         }
     }
 
@@ -118,10 +119,11 @@ public class CourseInfoService {
     }
 
     /**
-     * Query term info from database
+     * Query termName info from database
      *
      * @return raw query result
      */
+    @Deprecated
     public List<Document> queryTermInfoList() {
         return executeAggregation(newAggregation(
                 project("term"),
@@ -133,15 +135,15 @@ public class CourseInfoService {
     }
 
     /**
-     * Query teacher list by term
+     * Query teacher list by termName
      * <p>
      * Only get data of latest version
      *
-     * @param termName term
+     * @param termName termName
      * @return raw query result
      */
     public Document queryTermTeachers(String termName) {
-        String version = termListStore.getTermMeta(termName).getVersion();
+        String version = courseTermListStore.getTermMeta(termName).getVersion();
 
         return executeAggregation(newAggregation(
                 project("term", "batchId").and("lessons.teacher").as("teachers"),
@@ -153,15 +155,15 @@ public class CourseInfoService {
     }
 
     /**
-     * Query class list by term
+     * Query class list by termName
      * <p>
      * Only get data of latest version
      *
-     * @param termName term
+     * @param termName termName
      * @return raw query result
      */
     public Document queryTermClasses(String termName) {
-        String version = termListStore.getTermMeta(termName).getVersion();
+        String version = courseTermListStore.getTermMeta(termName).getVersion();
 
         return executeAggregation(newAggregation(
                 project("term", "batchId").and("lessons.classAttend").as("classAttend"),
@@ -174,15 +176,15 @@ public class CourseInfoService {
     }
 
     /**
-     * Query week range of a term
+     * Query week range of a termName
      * <p>
      * Only get data of latest version
      *
-     * @param termName term name
+     * @param termName termName name
      * @return raw query result
      */
     public Document queryTermWeekRange(String termName) {
-        String version = termListStore.getTermMeta(termName).getVersion();
+        String version = courseTermListStore.getTermMeta(termName).getVersion();
 
         return executeAggregation(newAggregation(
                 project("term", "batchId").and("lessons.timePoint").as("timePoint"),
@@ -197,15 +199,15 @@ public class CourseInfoService {
     }
 
     /**
-     * Query course list of a term
+     * Query course list of a termName
      * <p>
      * Only get data of latest version
      *
-     * @param termName term
+     * @param termName termName
      * @return raw query result
      */
     public List<Document> queryTermCourse(String termName) {
-        String version = termListStore.getTermMeta(termName).getVersion();
+        String version = courseTermListStore.getTermMeta(termName).getVersion();
 
         return executeAggregation(newAggregation(
                 project("term", "code", "name", "unit", "lessons", "assessmentType", "batchId")
@@ -218,15 +220,15 @@ public class CourseInfoService {
     }
 
     /**
-     * Query course type of a term
+     * Query course type of a termName
      * <p>
      * Only get data of latest version
      *
-     * @param termName term
+     * @param termName termName
      * @return raw query result
      */
     public Document queryTermCourseTypes(String termName) {
-        String version = termListStore.getTermMeta(termName).getVersion();
+        String version = courseTermListStore.getTermMeta(termName).getVersion();
 
         return executeAggregation(newAggregation(
                 project("term", "batchId").and("lessons.classType").as("classType"),
@@ -239,15 +241,15 @@ public class CourseInfoService {
     }
 
     /**
-     * Query classrooms that be used in a term
+     * Query classrooms that be used in a termName
      * <p>
      * Only get data of latest version
      *
-     * @param termName term
+     * @param termName termName
      * @return raw query result
      */
     public Document queryTermClassrooms(String termName) {
-        String version = termListStore.getTermMeta(termName).getVersion();
+        String version = courseTermListStore.getTermMeta(termName).getVersion();
 
         return executeAggregation(newAggregation(
                 project("term", "batchId").and("lessons.position").as("position"),

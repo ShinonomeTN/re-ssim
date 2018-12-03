@@ -22,7 +22,7 @@ constructor(private val courseInfoService: CourseInfoService) {
 
     /**
      *
-     * List term courses
+     * List termName courses
      *
      */
     @GetMapping("/{name}", params = ["course"])
@@ -33,7 +33,7 @@ constructor(private val courseInfoService: CourseInfoService) {
 
     /**
      *
-     * List all teacher presented in term
+     * List all teacher presented in termName
      *
      */
     @GetMapping("/{name}", params = ["teacher"])
@@ -44,7 +44,7 @@ constructor(private val courseInfoService: CourseInfoService) {
 
     /**
      *
-     * List all term class
+     * List all termName class
      *
      */
     @GetMapping("/{name}", params = ["class"])
@@ -55,7 +55,7 @@ constructor(private val courseInfoService: CourseInfoService) {
 
     /**
      *
-     * Show term week range
+     * Show termName week range
      *
      */
     @GetMapping("/{name}", params = ["weekRange"])
@@ -66,7 +66,7 @@ constructor(private val courseInfoService: CourseInfoService) {
 
     /**
      *
-     * Get all class types of term
+     * Get all class types of termName
      *
      */
     @GetMapping("/{name}", params = ["classType"])
@@ -77,7 +77,7 @@ constructor(private val courseInfoService: CourseInfoService) {
 
     /**
      *
-     * List all classrooms that used in term
+     * List all classrooms that used in termName
      *
      */
     @GetMapping("/{name}", params = ["classroom"])
