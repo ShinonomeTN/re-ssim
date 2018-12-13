@@ -2,6 +2,7 @@ package com.shinonometn.re.ssim.application.controller.management
 
 import com.shinonometn.re.ssim.application.configuration.preparation.endpoint.scanning.ApiDescription
 import com.shinonometn.re.ssim.commons.BusinessException
+import com.shinonometn.re.ssim.commons.validation.Validator
 import com.shinonometn.re.ssim.service.user.UserService
 import com.shinonometn.re.ssim.service.user.entity.User
 import com.shiononometn.commons.web.RexModel
@@ -14,7 +15,8 @@ import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/user")
-class UserManageAPI(private val userService: UserService) {
+class UserManageAPI(private val userService: UserService,
+                    private val validator: Validator) {
 
     /**
      *
@@ -25,6 +27,8 @@ class UserManageAPI(private val userService: UserService) {
     @ApiDescription(title = "Create a user", description = "Create a User")
     @RequiresPermissions("user:write")
     fun create(@RequestBody user: User): Any {
+        validator.validate(user)
+
         userService.findByUsername(user.username!!).ifPresent { throw BusinessException("user_exists") }
         return userService.save(user)
     }
@@ -67,10 +71,14 @@ class UserManageAPI(private val userService: UserService) {
     @PostMapping("/{username}")
     @ApiDescription(title = "Edit a user", description = "Edit a user")
     @RequiresPermissions("user:write")
-    fun edit(@PathVariable("username") username: String, @RequestBody user: User): User = userService.save(userService
-            .findByUsername(username)
-            .orElseThrow { BusinessException("user_not_found") }
-            .apply { BeanUtils.copyProperties(user, this, "id", "password", "registerDate") })
+    fun edit(@PathVariable("username") username: String, @RequestBody user: User): User {
+        validator.validate("user?edit",user)
+
+        return userService.save(userService
+                .findByUsername(username)
+                .orElseThrow { BusinessException("user_not_found") }
+                .apply { BeanUtils.copyProperties(user, this, "id", "password", "registerDate") })
+    }
 
     /**
      *

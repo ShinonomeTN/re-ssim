@@ -1,6 +1,7 @@
 package com.shinonometn.re.ssim.application.configuration.preparation.endpoint.scanning;
 
 import java.io.Serializable;
+import java.util.HashSet;
 import java.util.Set;
 
 public class EndpointInformation implements Serializable {
@@ -34,8 +35,8 @@ public class EndpointInformation implements Serializable {
     }
 
     public static class SignatureInfo {
-        private String methodSignature;
-        private String requestSignature;
+        private String methodSignature = "";
+        private String requestSignature = "";
 
         public String getMethodSignature() {
             return methodSignature;
@@ -55,8 +56,8 @@ public class EndpointInformation implements Serializable {
     }
 
     public static class PermissionInfo {
-        private Set<String> permissionsRequired;
-        private Set<String> roleRequired;
+        private Set<String> permissionsRequired = new HashSet<>();
+        private Set<String> roleRequired = new HashSet<>();
 
         public Set<String> getPermissionsRequired() {
             return permissionsRequired;
@@ -76,8 +77,8 @@ public class EndpointInformation implements Serializable {
     }
 
     public static class MetaInfo {
-        private String title;
-        private String description;
+        private String title = "";
+        private String description = "";
 
         public String getTitle() {
             return title;

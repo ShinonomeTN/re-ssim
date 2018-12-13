@@ -46,3 +46,4 @@ logging:
 
     com.shinonometn.ssim.lingnanCourse : DEBUG # Lingnan Courses Service
     com.shinonometn.re.ssim.management : DEBUG # Management Service
+

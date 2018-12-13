@@ -33,9 +33,7 @@ public class CalendarListPageProcessorTest {
                 .addPipeline((resultItems, task) -> resultSet.putAll(CalendarListPageProcessor.getCalendarList(resultItems)))
                 .run();
 
-        resultSet.forEach((k,v) -> {
-            TestHelper.info(String.format("%s : %s", k,v));
-        });
+        resultSet.forEach((k,v) -> TestHelper.info(String.format("%s : %s", k,v)));
 
         assertFalse(resultSet.isEmpty());
     }

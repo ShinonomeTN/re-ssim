@@ -3,6 +3,7 @@ package com.shinonometn.re.ssim.application.controller.management.data
 import com.shinonometn.re.ssim.application.configuration.preparation.endpoint.scanning.ApiDescription
 import com.shinonometn.re.ssim.application.security.WebSubjectUtils
 import com.shinonometn.re.ssim.commons.BusinessException
+import com.shinonometn.re.ssim.commons.validation.Validator
 import com.shinonometn.re.ssim.service.caterpillar.CaterpillarDataService
 import com.shinonometn.re.ssim.service.caterpillar.CaterpillarTaskService
 import com.shinonometn.re.ssim.service.caterpillar.entity.CaterpillarSetting
@@ -17,7 +18,8 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @RequestMapping("/caterpillar/profiles")
 class CaterpillarProfileAPI(private val caterpillarProfileDataService: CaterpillarDataService,
-                            private val caterpillarTaskService: CaterpillarTaskService) {
+                            private val caterpillarTaskService: CaterpillarTaskService,
+                            private val validator: Validator) {
 
     @GetMapping
     @ApiDescription(title = "List all data profile", description = "List all data profiles")
@@ -29,6 +31,8 @@ class CaterpillarProfileAPI(private val caterpillarProfileDataService: Caterpill
     @ApiDescription(title = "Create a data profile", description = "Profile will binding to current user, reject if profile exists.")
     @RequiresPermissions("profile:data:write")
     fun save(@RequestBody caterpillarSetting: CaterpillarSetting): CaterpillarSetting {
+
+        validator.validate(caterpillarSetting)
 
         val username = WebSubjectUtils.currentUser().username!!
 

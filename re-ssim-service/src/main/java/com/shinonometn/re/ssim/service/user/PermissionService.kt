@@ -10,7 +10,7 @@ import java.util.*
 class PermissionService(private val permissionRepository: PermissionRepository,
                         private val roleRepository: RoleRepository) {
 
-    fun findByUser(username: String): Optional<Permission> = permissionRepository.findByUsername(username)
+    fun findByUser(username: String): Optional<Permission> = permissionRepository.findByUser(username)
 
     fun save(permission: Permission): Permission = permissionRepository.save(permission.apply {
         updateDate = Date()

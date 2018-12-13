@@ -3,6 +3,7 @@ package com.shinonometn.re.ssim.application.configuration;
 import com.shinonometn.re.ssim.service.commons.InMemoryStore;
 import com.shinonometn.re.ssim.service.commons.InMemoryStoreManager;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -14,6 +15,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import java.util.List;
 
 @Configuration
+//@ComponentScan("com.shinonometn.re.ssim")
 public class ApplicationConfigurations {
 
     @Bean

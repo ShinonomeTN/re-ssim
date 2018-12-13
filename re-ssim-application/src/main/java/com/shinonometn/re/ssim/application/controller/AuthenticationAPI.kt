@@ -4,6 +4,7 @@ import com.shinonometn.re.ssim.application.configuration.preparation.endpoint.sc
 import com.shinonometn.re.ssim.application.controller.froms.LoginForm
 import com.shinonometn.re.ssim.application.security.RessimUserPasswordToken
 import com.shinonometn.re.ssim.application.security.WebSubjectUtils
+import com.shinonometn.re.ssim.commons.validation.Validator
 import com.shinonometn.re.ssim.service.user.UserService
 import com.shiononometn.commons.web.RexModel
 import org.apache.shiro.authz.annotation.RequiresAuthentication
@@ -11,13 +12,16 @@ import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/auth")
-class AuthenticationAPI(private val userService: UserService) {
+class AuthenticationAPI(private val userService: UserService,
+                        private val validator: Validator) {
 
     @PostMapping(params = ["login"])
     @ApiDescription(title = "User login", description = "Use username and password to login")
     fun login(@RequestBody loginForm: LoginForm,
               @RequestHeader("Host") host: String,
               @RequestHeader("X-Real-IP", defaultValue = "0.0.0.0", required = false) remoteIp: String): RexModel<Any> {
+
+        validator.validate(loginForm)
 
         val token = RessimUserPasswordToken()
         token.username = loginForm.username

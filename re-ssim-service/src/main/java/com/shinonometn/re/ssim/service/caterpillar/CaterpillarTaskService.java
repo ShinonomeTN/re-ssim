@@ -70,7 +70,7 @@ public class CaterpillarTaskService {
      * <p>
      * if cache not found, load from remote and cache it
      *
-     * @return a map, term code as key, term name as value
+     * @return a map, termName code as key, termName name as value
      */
     @Cacheable(CacheKeys.CAPTURE_TERM_LIST)
     @NotNull
@@ -118,9 +118,9 @@ public class CaterpillarTaskService {
      * */
 
     /**
-     * Create a term capture task with code
+     * Create a termName capture task with code
      *
-     * @param termCode term code
+     * @param termCode termName code
      * @return created task
      */
     public CaptureTask create(String termCode) {
@@ -218,7 +218,7 @@ public class CaterpillarTaskService {
                         .setUUID(taskId)
                         .thread(caterpillarSetting.getThreads());
 
-                spider.startRequest(fetchTermList(site, captureTaskDetails.getTaskInfo().getTermCode())
+                spider.startRequest(fetchTermCourseList(site, captureTaskDetails.getTaskInfo().getTermCode())
                         .stream()
                         .map(id -> createSubjectRequest(site, captureTaskDetails.getTaskInfo().getTermCode(), id))
                         .collect(Collectors.toList()));
@@ -316,7 +316,7 @@ public class CaterpillarTaskService {
         return captureTaskDetails;
     }
 
-    private Collection<String> fetchTermList(Site site, String termCode) {
+    private Collection<String> fetchTermCourseList(Site site, String termCode) {
         Map<String, String> termList = new HashMap<>();
 
         Spider.create(new CoursesListPageProcessor(site))

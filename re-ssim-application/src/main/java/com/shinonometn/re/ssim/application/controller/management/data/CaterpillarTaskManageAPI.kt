@@ -27,7 +27,7 @@ open class CaterpillarTaskManageAPI(private val caterpillarTaskService: Caterpil
 
     /**
      *
-     * Get term list
+     * Get termName list
      *
      */
     @GetMapping("/term")
@@ -37,7 +37,7 @@ open class CaterpillarTaskManageAPI(private val caterpillarTaskService: Caterpil
 
     /**
      *
-     * Clear cache and get term list
+     * Clear cache and get termName list
      *
      */
     @GetMapping("/term", params = ["refresh"])

@@ -8,7 +8,6 @@ import us.codecraft.webmagic.Site;
 import us.codecraft.webmagic.processor.PageProcessor;
 
 import java.text.ParseException;
-import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -45,12 +44,12 @@ public class CalendarPageProcessor implements PageProcessor {
     }
 
     public static class CalendarRangeInfo {
-        public final String term;
+        public final String termName;
         public final Date startDate;
         public final Date endDate;
 
-        public CalendarRangeInfo(String term, Date startDate, Date endDate) {
-            this.term = term;
+        public CalendarRangeInfo(String termName, Date startDate, Date endDate) {
+            this.termName = termName;
             this.startDate = startDate;
             this.endDate = endDate;
         }
@@ -58,7 +57,7 @@ public class CalendarPageProcessor implements PageProcessor {
         @Override
         public String toString() {
             return "CalendarRangeInfo{" +
-                    "term='" + term + '\'' +
+                    "termName='" + termName + '\'' +
                     ", startDate=" + startDate +
                     ", endDate=" + endDate +
                     '}';
@@ -69,7 +68,7 @@ public class CalendarPageProcessor implements PageProcessor {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             CalendarRangeInfo that = (CalendarRangeInfo) o;
-            return Objects.equals(term, that.term) &&
+            return Objects.equals(termName, that.termName) &&
                     Objects.equals(startDate, that.startDate) &&
                     Objects.equals(endDate, that.endDate);
         }
@@ -77,7 +76,7 @@ public class CalendarPageProcessor implements PageProcessor {
         @Override
         public int hashCode() {
 
-            return Objects.hash(term, startDate, endDate);
+            return Objects.hash(termName, startDate, endDate);
         }
     }
 

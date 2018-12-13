@@ -6,7 +6,5 @@ import java.util.*
 
 interface PermissionRepository : MongoRepository<Permission, String> {
 
-    fun findAllByUsername(username: String): MutableList<Permission>
-
-    fun findByUsername(username: String): Optional<Permission>
+    fun findByUser(username: String): Optional<Permission>
 }
