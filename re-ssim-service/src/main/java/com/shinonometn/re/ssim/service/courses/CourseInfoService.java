@@ -46,7 +46,6 @@ public class CourseInfoService {
 
         this.mongoTemplate = mongoTemplate;
         this.courseRepository = courseRepository;
-        this.importTaskService = importTaskService;
         this.courseTermListStore = courseTermListStore;
     }
 
