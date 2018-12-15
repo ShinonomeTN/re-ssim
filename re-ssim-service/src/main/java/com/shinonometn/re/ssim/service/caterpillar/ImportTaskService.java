@@ -147,7 +147,7 @@ public class ImportTaskService {
         ImportTask importTask = new ImportTask();
 
         importTask.setTermCode(captureTask.getTermCode());
-        importTask.setTermName(importTask.getTermName());
+        importTask.setTermName(captureTask.getTermName());
         importTask.setDataPath(dataFolder.getDomainPath());
         importTask.setCaptureTaskId(taskId);
         importTask.setCreateDate(new Date());

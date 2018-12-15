@@ -18,8 +18,6 @@ public class CacheManageService {
         messageBus.register(new Listener("import.finished", o -> clearCache()));
     }
 
-
-    @NotNull
     public void clearCache() {
         cacheManager.getCacheNames().forEach(e -> cacheManager.getCache(e).clear());
     }

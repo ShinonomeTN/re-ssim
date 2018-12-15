@@ -72,10 +72,16 @@ public class MessageBus {
                             .flatMap(Collection::stream)
                             .collect(Collectors.toList());
 
-                    if (listeners.size() <= 0)
+                    if (message != null && listeners.size() <= 0)
                         logger.warn("Got a message, but no one accept it, it will be drop: {}", message.getTopic());
                     else
-                        listeners.stream().parallel().forEach(l -> l.getWorks().accept(message));
+                        listeners.stream().parallel().forEach(l -> {
+                            try{
+                                l.getWorks().accept(message);
+                            } catch (Exception ignore){
+
+                            }
+                        });
 
                     messageCount.incrementAndGet();
                     Thread.sleep(300);
