@@ -1,14 +1,18 @@
 package com.shinonometn.re.ssim.service.courses;
 
 import com.shinonometn.re.ssim.commons.BusinessException;
+import com.shinonometn.re.ssim.service.caterpillar.common.SchoolCalendar;
+import com.shinonometn.re.ssim.service.caterpillar.kingo.KingoSchoolCalendar;
 import com.shinonometn.re.ssim.service.caterpillar.kingo.capture.CalendarPageProcessor;
 import com.shinonometn.re.ssim.service.courses.entity.SchoolCalendarEntity;
 import com.shinonometn.re.ssim.service.courses.entity.TermInfoEntity;
+import com.shinonometn.re.ssim.service.courses.plugin.SchoolCalendarStore;
 import com.shinonometn.re.ssim.service.courses.repository.SchoolCalendarEntityRepository;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import us.codecraft.webmagic.Request;
 import us.codecraft.webmagic.Site;
@@ -16,10 +20,8 @@ import us.codecraft.webmagic.Spider;
 import us.codecraft.webmagic.model.HttpRequestBody;
 import us.codecraft.webmagic.utils.HttpConstant;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.time.LocalDateTime;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.shinonometn.re.ssim.service.caterpillar.kingo.KingoUrls.calendarPage;
@@ -28,9 +30,17 @@ import static com.shinonometn.re.ssim.service.caterpillar.kingo.KingoUrls.calend
 public class SchoolCalendarService {
 
     private final SchoolCalendarEntityRepository schoolCalendarEntityRepository;
+    private final SchoolCalendarStore schoolCalendarStore;
 
-    public SchoolCalendarService(SchoolCalendarEntityRepository schoolCalendarEntityRepository) {
+    public SchoolCalendarService(SchoolCalendarEntityRepository schoolCalendarEntityRepository, SchoolCalendarStore schoolCalendarStore) {
         this.schoolCalendarEntityRepository = schoolCalendarEntityRepository;
+        this.schoolCalendarStore = schoolCalendarStore;
+
+        // let school date store can get current school date
+        schoolCalendarStore.setSchoolDateSupplier(() -> {
+            SchoolCalendar s = getCurrentCalendarInfo();
+            return s == null ? null : s.getFromDateTime(LocalDateTime.now());
+        });
     }
 
     public Page<SchoolCalendarEntity> list(Pageable pageable) {
@@ -98,5 +108,17 @@ public class SchoolCalendarService {
 
     public Optional<SchoolCalendarEntity> findById(String id) {
         return schoolCalendarEntityRepository.findById(id);
+    }
+
+
+    public SchoolCalendar getCurrentCalendarInfo() {
+
+        List<SchoolCalendarEntity> queryResult = schoolCalendarEntityRepository.findAll(PageRequest.of(0, 2, Sort.Direction.DESC, "endDate")).getContent();
+        if (queryResult.size() == 0) return null;
+        SchoolCalendarEntity latestCalendar = queryResult.get(0);
+        if (new Date().compareTo(latestCalendar.getStartDate()) < 0) latestCalendar = queryResult.get(1);
+        if (latestCalendar == null) return null;
+
+        return new KingoSchoolCalendar(latestCalendar.getTermName(), latestCalendar.getStartDate(), latestCalendar.getEndDate());
     }
 }
