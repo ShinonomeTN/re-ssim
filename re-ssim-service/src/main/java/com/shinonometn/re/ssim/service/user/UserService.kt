@@ -15,7 +15,7 @@ class UserService(private val userRepository: UserRepository,
                   private val roleService: RoleService,
                   private val permissionService: PermissionService) {
 
-    fun save(user: User) = userRepository.save(user)
+    fun save(user: User): User = userRepository.save(user)
 
     fun get(id: String): User = userRepository.getById(id)
 
@@ -37,6 +37,7 @@ class UserService(private val userRepository: UserRepository,
                             .flatMap { it.get().permissions })
                 }
 
+        result.user = findByUsername(username).orElse(null)
         result.permissions = stringPermissions
         result.roles = permission.roles
 

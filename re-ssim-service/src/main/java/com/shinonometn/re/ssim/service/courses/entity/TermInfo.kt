@@ -1,11 +1,11 @@
 package com.shinonometn.re.ssim.service.courses.entity
 
-class TermInfo {
-    var term : TermInfo? = null
+import java.io.Serializable
 
-    var hasLocalCourseData : Boolean = false
-    var hasRemoteCourseData: Boolean = false
+class TermInfo : Serializable {
+    var term: TermInfoEntity? = null
 
-    var hasLocalCalendarData : Boolean = false
-    var hasRemoteCalendarData : Boolean = true
+    var hasLocalCourseData: Boolean = false
+
+    var hasLocalCalendarData: Boolean = false
 }

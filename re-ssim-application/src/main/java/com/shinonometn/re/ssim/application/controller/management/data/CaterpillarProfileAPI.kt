@@ -36,28 +36,35 @@ class CaterpillarProfileAPI(private val caterpillarProfileDataService: Caterpill
 
         val username = WebSubjectUtils.currentUser().username!!
 
-        caterpillarProfileDataService.findProfile(username, caterpillarSetting.name!!).run {
-            return if (isPresent) {
-                val oldOne = get()
-                if (username != caterpillarSetting.username) throw BusinessException("not_profile_owner")
-                BeanUtils.copyProperties(caterpillarSetting, oldOne, "id")
-                caterpillarProfileDataService.save(oldOne)
-            } else {
-                caterpillarSetting.owner = username
-                caterpillarProfileDataService.save(caterpillarSetting)
+        if (caterpillarSetting.id == null) {
+            caterpillarSetting.owner = username
+            return caterpillarProfileDataService.save(caterpillarSetting)
+        }
+
+        caterpillarProfileDataService.findById(caterpillarSetting.id!!).run {
+            if (isPresent) {
+                val oldOne = this.get()
+                if (oldOne.owner != WebSubjectUtils.currentUser().username) throw BusinessException("not_profile_owner")
+                BeanUtils.copyProperties(caterpillarSetting, oldOne, "id", "owner")
+                return caterpillarProfileDataService.save(oldOne)
             }
         }
+
+        throw BusinessException("not_found")
     }
 
-    @PostMapping(value = ["/{name}"], params = ["validate"])
+    @PostMapping(value = ["/{id}"], params = ["validate"])
     @ApiDescription(title = "Caterpillar Settings", description = "Validate a data setting.")
     @RequiresPermissions("profile:data:validate")
-    fun checkSettings(@PathVariable("name") name: String) {
+    fun checkSettings(@PathVariable("id") id: String): RexModel<Any> {
         val caterpillarSetting = caterpillarProfileDataService
-                .findProfile(WebSubjectUtils.currentUser().username!!, name)
+                .findById(id)
                 .orElseThrow { BusinessException("profile_not_found") }
 
-        RexModel<Any>()
+        if (WebSubjectUtils.currentUser().username != caterpillarSetting.owner)
+            throw BusinessException("not_your_profile")
+
+        return RexModel<Any>()
                 .withMessage(if (caterpillarTaskService.validateSettings(caterpillarSetting)) "pass" else "failed")
     }
 

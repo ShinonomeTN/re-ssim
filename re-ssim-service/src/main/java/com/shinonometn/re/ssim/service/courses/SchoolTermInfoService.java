@@ -1,17 +1,22 @@
 package com.shinonometn.re.ssim.service.courses;
 
-import com.shinonometn.re.ssim.service.caterpillar.common.SchoolCalendar;
+import com.shinonometn.re.ssim.commons.BusinessException;
+import com.shinonometn.re.ssim.commons.KeyValue;
+import com.shinonometn.re.ssim.service.bus.Listener;
+import com.shinonometn.re.ssim.service.bus.MessageBus;
 import com.shinonometn.re.ssim.service.caterpillar.entity.CaterpillarSetting;
-import com.shinonometn.re.ssim.service.caterpillar.kingo.KingoSchoolCalendar;
+import com.shinonometn.re.ssim.service.caterpillar.entity.ImportTask;
 import com.shinonometn.re.ssim.service.caterpillar.kingo.KingoUrls;
 import com.shinonometn.re.ssim.service.caterpillar.kingo.capture.CalendarListPageProcessor;
 import com.shinonometn.re.ssim.service.caterpillar.kingo.capture.TermListPageProcessor;
 import com.shinonometn.re.ssim.service.courses.entity.CourseEntity;
-import com.shinonometn.re.ssim.service.courses.entity.SchoolCalendarEntity;
 import com.shinonometn.re.ssim.service.courses.entity.TermInfoEntity;
+import com.shinonometn.re.ssim.service.courses.plugin.CourseTermListStore;
 import com.shinonometn.re.ssim.service.courses.plugin.structure.TermMeta;
 import com.shinonometn.re.ssim.service.courses.repository.TermInfoRepository;
 import org.bson.Document;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -32,9 +37,26 @@ public class SchoolTermInfoService {
     private final TermInfoRepository termInfoRepository;
     private final MongoTemplate mongoTemplate;
 
-    public SchoolTermInfoService(TermInfoRepository termInfoRepository, MongoTemplate mongoTemplate) {
+    public SchoolTermInfoService(TermInfoRepository termInfoRepository,
+                                 MongoTemplate mongoTemplate,
+                                 CourseTermListStore courseTermListStore,
+                                 MessageBus messageBus) {
+
         this.termInfoRepository = termInfoRepository;
         this.mongoTemplate = mongoTemplate;
+
+        // When data import finish, update cache
+        messageBus.register(new Listener("import.finished", o -> {
+            ImportTask task = (ImportTask) o.getPayload();
+            TermInfoEntity termInfoEntity = findByTermName(task.getTermName())
+                    .orElseThrow(() -> new BusinessException("Could not found a term named " + task.getTermName()));
+
+            termInfoEntity.setDataVersion(task.getId());
+            save(termInfoEntity);
+
+            courseTermListStore.update(task.getTermName(), TermMeta.Companion.fromEntity(termInfoEntity));
+
+        }));
     }
 
     public TermInfoEntity get(String id) {
@@ -78,7 +100,9 @@ public class SchoolTermInfoService {
         saveAll(resultSet.entrySet()
                 .stream()
                 .map(e -> {
-                    TermInfoEntity entry = termInfoRepository.findByName(e.getKey()).orElse(new TermInfoEntity());
+                    TermInfoEntity entry = termInfoRepository.findByName(e.getValue())
+                            .orElse(termInfoRepository.findByCode(e.getKey()).orElse(new TermInfoEntity()));
+
                     entry.setCode(e.getKey());
                     entry.setName(e.getValue());
                     return entry;
@@ -95,40 +119,41 @@ public class SchoolTermInfoService {
 
         Spider.create(new TermListPageProcessor(CaterpillarSetting.Companion.createDefaultSite()))
                 .addUrl(KingoUrls.classInfoQueryPage)
-                .addPipeline((r, t) -> saveAll(TermListPageProcessor
-                        .getTerms(r)
-                        .entrySet()
-                        .stream()
-                        .map(e -> termInfoRepository
-                                .findByCode(e.getKey())
-                                .orElse(termInfoRepository
-                                        .findByName(e.getValue())
-                                        .orElseGet(() -> {
-                                            TermInfoEntity newEntity = new TermInfoEntity();
-                                            newEntity.setCode(e.getKey());
-                                            newEntity.setName(e.getValue());
-                                            return newEntity;
-                                        }))).collect(Collectors.toList())))
+                .addPipeline((r, t) -> saveAll(TermListPageProcessor.getTerms(r).entrySet().stream()
+                        .map(codeAndName -> termInfoRepository.findByCode(codeAndName.getKey())
+                                .orElse(termInfoRepository.findByName(codeAndName.getValue())
+                                        .orElseGet(() -> new TermInfoEntity(codeAndName.getKey(), codeAndName.getValue()))))
+                        .collect(Collectors.toList())))
                 .run();
     }
 
     /**
      * Query a list of term name that has local course data
      *
-     * @return raw query result list
-     * <p>
-     * keys:
-     * "term" contains a String,
-     * "courseCount" contains a Integer
+     * @return query result, KeyValue pairs. "term" as Key, "courseCount" as Value
      */
-    public List<Document> queryTermsHasCourses() {
+    public List<KeyValue<String, Integer>> queryTermsHasCourses() {
         return courseQuery(
                 project("term"),
                 group("term").count().as("courseCount"),
                 project("courseCount")
                         .and("_id").as("name")
                         .andExclude("_id"))
-                .getMappedResults();
+                .getMappedResults()
+                .stream()
+                .map(e -> new KeyValue<>(e.getString("name"), e.getInteger("courseCount")))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Query a school term by name
+     *
+     * @param termName term name
+     * @return optional
+     */
+    @NotNull
+    public Optional<TermInfoEntity> findByTermName(@Nullable String termName) {
+        return termInfoRepository.findByName(termName);
     }
 
     /*
@@ -149,4 +174,8 @@ public class SchoolTermInfoService {
             .setCharset("GBK")
             .setUserAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_3) AppleWebKit/602.4.8 (KHTML, like Gecko) Version/10.0.3 Safari/602.4.8")
             .addHeader("Referer", calendarPage);
+
+    public Optional<TermInfoEntity> findByTermCode(@NotNull String termCode) {
+        return termInfoRepository.findByCode(termCode);
+    }
 }

@@ -9,7 +9,7 @@ import java.io.File;
 @Configuration
 public class FileServiceConfiguration {
 
-    @Value("${application.dataDir:./}")
+    @Value("${app.dataDir:./}")
     private String dataDir = "./";
 
     @Bean(name = "dataDirectory")

@@ -18,5 +18,5 @@ class DashboardAPI(private val statisticsService: StatisticsService) {
     @GetMapping("/dashes")
     @ApiDescription(title = "Get task status", description = "Get task status.")
     @RequiresPermissions("dash.task:get")
-    fun dashboard(): Map<String, String> = statisticsService.dashBoard()
+    fun dashboard(): MutableMap<String, Long>? = statisticsService.dashBoard()
 }

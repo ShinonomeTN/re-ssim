@@ -1,10 +1,25 @@
 package com.shinonometn.re.ssim.service.courses.plugin.structure
 
 import com.fasterxml.jackson.annotation.JsonInclude
+import com.shinonometn.re.ssim.service.courses.entity.TermInfoEntity
+import org.springframework.beans.BeanUtils
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 class TermMeta {
-    var code : String? = null
+    var code: String? = null
+    var name: String? = null
+
     var courseCount: Int = 0
-    var version: String = ""
+    var courseTypes: MutableList<String>? = null
+
+    var minWeek: Int? = null
+    var maxWeek: Int? = null
+
+    var dataVersion: String? = null
+
+    companion object {
+        fun fromEntity(termInfoEntity: TermInfoEntity) = TermMeta().apply {
+            BeanUtils.copyProperties(termInfoEntity, this, TermMeta::class.java)
+        }
+    }
 }

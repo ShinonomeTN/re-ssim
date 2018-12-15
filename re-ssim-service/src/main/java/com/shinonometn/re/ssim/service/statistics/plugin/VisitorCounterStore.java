@@ -2,20 +2,17 @@ package com.shinonometn.re.ssim.service.statistics.plugin;
 
 import com.shinonometn.re.ssim.service.commons.InMemoryStoreAdapter;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Component;
 
 @Component
-public class VisitorCounterStore extends InMemoryStoreAdapter {
+public class VisitorCounterStore extends InMemoryStoreAdapter<String> {
 
-    private final ValueOperations<String, String> operations;
+    private final ValueOperations<String, String> operations = redisTemplate.opsForValue();
 
-    private final String storeKey = cacheKey();
-
-    public VisitorCounterStore(StringRedisTemplate template) {
-        super(template, "counter.visitor");
-        operations = template.opsForValue();
+    public VisitorCounterStore(RedisConnectionFactory redisConnectionFactory) {
+        super(redisConnectionFactory, "counter.visitor");
     }
 
     @Override

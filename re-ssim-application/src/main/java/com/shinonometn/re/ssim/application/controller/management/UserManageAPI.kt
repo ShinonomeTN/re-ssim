@@ -72,12 +72,21 @@ class UserManageAPI(private val userService: UserService,
     @ApiDescription(title = "Edit a user", description = "Edit a user")
     @RequiresPermissions("user:write")
     fun edit(@PathVariable("username") username: String, @RequestBody user: User): User {
-        validator.validate("user?edit",user)
+        validator.validate("user?edit", user)
 
         return userService.save(userService
                 .findByUsername(username)
                 .orElseThrow { BusinessException("user_not_found") }
-                .apply { BeanUtils.copyProperties(user, this, "id", "password", "registerDate") })
+                .apply {
+                    BeanUtils.copyProperties(
+                            user,
+                            this,
+                            "id", // You cannot change id
+                            "username", // also username
+                            "enable", // it controlled by higher permission
+                            "password", // it had a interface
+                            "registerDate")// It is not allowed to be change
+                })
     }
 
     /**

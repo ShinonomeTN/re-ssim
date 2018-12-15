@@ -52,7 +52,7 @@ open class ServerInitializePreparation(private val tasks: List<ServerInitializeT
 
             meta = LinkedHashMap<String,Any?>().apply{
                 this["succeededTask"] = tasks.filter { (firstTimeStartup && it.onlyAtFirstTime()) || !it.onlyAtFirstTime() }
-                this["skippedTask"] = tasks.filter { firstTimeStartup }
+                this["skippedTask"] = tasks.filter { firstTimeStartup && it.onlyAtFirstTime() }
             }
         }.toFile(File(dataDir, StartupInfoFile.filename()))
     }

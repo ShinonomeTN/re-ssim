@@ -18,13 +18,14 @@ open class WebFormValidationConfiguration {
     @Language("RegExp")
     private val usernameValidator = ValidationFunctions.forRegex("^[A-Za-z0-9\\-_]{4,64}$")
     private val passwordValidator = ValidationFunctions.forLength(6, 64)
+    private val urlValidator = ValidationFunctions.forLength(0,256);
 
     @Language("RegExp")
     private val caterpillarProfileNameValidator = ValidationFunctions.forRegex("^[\\w\\d ]{1,32}$")
     @Language("RegExp")
     private val caterpillarUsernameValidator = ValidationFunctions.forRegex("^[A-Za-z\\d_-]{1,32}$")
-    private val caterpillarEncodingValidator = ValidationFunctions.forRegex("^(utf8|gbk|gbk2312)$")
-    private val caterpillarThreadValidator = ValidationFunctions.forLength(1, 8);
+    private val caterpillarEncodingValidator = ValidationFunctions.forRegex("^(utf8|UTF8|gbk|GBK|gbk2312|GBK2312)$")
+    private val caterpillarThreadValidator = ValidationFunctions.forLength(1, 8)
 
     private val notNullValidator = ValidationFunctions.notNull()
     private val nullValidator = ValidationFunctions.shouldNull()
@@ -43,6 +44,7 @@ open class WebFormValidationConfiguration {
             .of(User::class.java)
             .addValidator("username", usernameValidator)
             .addValidator("password", passwordValidator)
+            .addValidator("avatar",urlValidator)
             .addValidator("enable", notNullValidator)
             .addValidator("registerDate", nullValidator)
 

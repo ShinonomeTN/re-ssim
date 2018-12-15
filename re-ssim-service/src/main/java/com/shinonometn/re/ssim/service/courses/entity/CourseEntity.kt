@@ -3,9 +3,10 @@ package com.shinonometn.re.ssim.service.courses.entity
 import com.shinonometn.re.ssim.service.caterpillar.kingo.pojo.Lesson
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
+import java.io.Serializable
 
 @Document
-open class CourseEntity {
+open class CourseEntity: Serializable {
 
     @Id
     var id: String? = null

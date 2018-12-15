@@ -2,26 +2,27 @@ package com.shinonometn.re.ssim.service.courses;
 
 import com.mongodb.client.result.DeleteResult;
 import com.shinonometn.re.ssim.commons.CacheKeys;
-import com.shinonometn.re.ssim.service.caterpillar.ImportTaskService;
 import com.shinonometn.re.ssim.service.courses.entity.CourseEntity;
 import com.shinonometn.re.ssim.service.courses.plugin.CourseTermListStore;
-import com.shinonometn.re.ssim.service.courses.plugin.structure.TermMeta;
 import com.shinonometn.re.ssim.service.courses.repository.CourseRepository;
+import org.apache.commons.lang3.Range;
 import org.bson.Document;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
-import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
+import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 @Service
 public class CourseInfoService {
@@ -29,23 +30,19 @@ public class CourseInfoService {
     private final MongoTemplate mongoTemplate;
     private final CourseRepository courseRepository;
 
-    private ImportTaskService importTaskService;
-
     private final CourseTermListStore courseTermListStore;
 
-    // Temporal resolve cycle dependency
-    @Autowired
-    public void setImportTaskService(ImportTaskService importTaskService) {
-        this.importTaskService = importTaskService;
-    }
+    private final SchoolTermInfoService schoolTermInfoService;
 
     @Autowired
     public CourseInfoService(MongoTemplate mongoTemplate,
                              CourseRepository courseRepository,
+                             SchoolTermInfoService schoolTermInfoService,
                              CourseTermListStore courseTermListStore) {
 
         this.mongoTemplate = mongoTemplate;
         this.courseRepository = courseRepository;
+        this.schoolTermInfoService = schoolTermInfoService;
         this.courseTermListStore = courseTermListStore;
     }
 
@@ -80,7 +77,7 @@ public class CourseInfoService {
     public DeleteResult deleteOtherVersions(String currentVersion) {
         return mongoTemplate
                 .remove(CourseEntity.class)
-                .matching(Query.query(Criteria.where("batchId").ne(currentVersion)))
+                .matching(Query.query(where("batchId").ne(currentVersion)))
                 .all();
     }
 
@@ -93,51 +90,8 @@ public class CourseInfoService {
     public DeleteResult deleteVersion(String version) {
         return mongoTemplate
                 .remove(CourseEntity.class)
-                .matching(Query.query(Criteria.where("batchId").is(version)))
+                .matching(Query.query(where("batchId").is(version)))
                 .all();
-    }
-
-    /**
-     * Get termName list
-     *
-     * @return termName list with meta
-     */
-
-    @Deprecated
-    public Map<String, TermMeta> termList() {
-        if (courseTermListStore.isEmpty()) {
-            Map<String, TermMeta> queryResult = queryTermInfoList()
-                    .stream()
-                    .collect(Collectors.toMap(d -> d.getString("name"), this::termMetaFromDocument));
-
-            courseTermListStore.putAll(queryResult);
-            return queryResult;
-        } else {
-            return courseTermListStore.getAll();
-        }
-    }
-
-    private TermMeta termMetaFromDocument(Document document) {
-        TermMeta termMeta = new TermMeta();
-        termMeta.setCourseCount(document.getInteger("courseCount"));
-        termMeta.setVersion(importTaskService.latestVersionOf(document.getString("name")));
-        return termMeta;
-    }
-
-    /**
-     * Query termName info from database
-     *
-     * @return raw query result
-     */
-    @Deprecated
-    public List<Document> queryTermInfoList() {
-        return executeAggregation(newAggregation(
-                project("term"),
-                group("term").count().as("courseCount"),
-                project("courseCount")
-                        .and("_id").as("name")
-                        .andExclude("_id")
-        )).getMappedResults();
     }
 
     /**
@@ -146,18 +100,22 @@ public class CourseInfoService {
      * Only get data of latest version
      *
      * @param termName termName
-     * @return raw query result
+     * @return query result, list of teacher names
      */
-    public Document queryTermTeachers(String termName) {
-        String version = courseTermListStore.getTermMeta(termName).getVersion();
+    public List<String> queryTermTeachers(String termName, String version) {
 
-        return executeAggregation(newAggregation(
+        return query(
                 project("term", "batchId").and("lessons.teacher").as("teachers"),
-                match(Criteria.where("term").is(termName).and("batchId").is(version)),
+
+                match(where("term").is(termName)
+                        .and("batchId").is(version)),
+
                 unwind("teachers"),
+
                 group().addToSet("teachers").as("teachers"),
+
                 project().andExclude("_id")
-        )).getUniqueMappedResult();
+        ).getUniqueMappedResult().get("teachers", new ArrayList<>());
     }
 
     /**
@@ -166,19 +124,23 @@ public class CourseInfoService {
      * Only get data of latest version
      *
      * @param termName termName
-     * @return raw query result
+     * @return query result, list of class names
      */
-    public Document queryTermClasses(String termName) {
-        String version = courseTermListStore.getTermMeta(termName).getVersion();
+    public List<String> queryTermClasses(String termName, String version) {
+        return query(
+                project("term", "batchId")
+                        .and("lessons.classAttend").as("classAttend"),
 
-        return executeAggregation(newAggregation(
-                project("term", "batchId").and("lessons.classAttend").as("classAttend"),
-                match(Criteria.where("term").is(termName).and("batchId").is(version)),
+                match(where("term").is(termName)
+                        .and("batchId").is(version)),
+
                 unwind("classAttend"),
                 unwind("classAttend"),
+
                 group().addToSet("classAttend").as("classes"),
+
                 project().andExclude("_id")
-        )).getUniqueMappedResult();
+        ).getUniqueMappedResult().get("classes", new ArrayList<>());
     }
 
     /**
@@ -187,21 +149,33 @@ public class CourseInfoService {
      * Only get data of latest version
      *
      * @param termName termName name
-     * @return raw query result
+     * @return query result
      */
-    public Document queryTermWeekRange(String termName) {
-        String version = courseTermListStore.getTermMeta(termName).getVersion();
+    @SuppressWarnings("ConstantConditions")
+    public Optional<Range<Integer>> queryTermWeekRange(String termName, String version) {
+//        String version = schoolTermInfoService
+//                .findByTermName(termName).orElse(new TermInfoEntity()).getDataVersion();
 
-        return executeAggregation(newAggregation(
+//        if(StringUtils.isEmpty(version)) version = null;
+
+        Document document = query(
                 project("term", "batchId").and("lessons.timePoint").as("timePoint"),
-                match(Criteria.where("term").is(termName).and("batchId").is(version)),
+
+                match(where("term").is(termName).and("batchId").is(version)),
+
                 unwind("timePoint"),
                 unwind("timePoint"),
+
                 group()
                         .max("timePoint.week").as("max")
                         .min("timePoint.week").as("min"),
+
                 project().andExclude("_id")
-        )).getUniqueMappedResult();
+        ).getUniqueMappedResult();
+
+        if (document == null) return Optional.empty();
+
+        return Optional.of(Range.between(document.getInteger("min"), document.getInteger("max")));
     }
 
     /**
@@ -212,13 +186,11 @@ public class CourseInfoService {
      * @param termName termName
      * @return raw query result
      */
-    public List<Document> queryTermCourse(String termName) {
-        String version = courseTermListStore.getTermMeta(termName).getVersion();
-
+    public List<Document> queryTermCourse(String termName, String version) {
         return executeAggregation(newAggregation(
                 project("term", "code", "name", "unit", "lessons", "assessmentType", "batchId")
                         .and("lessons.classType").as("classType"),
-                match(Criteria.where("term").is(termName).and("batchId").is(version)),
+                match(where("term").is(termName).and("batchId").is(version)),
                 unwind("lessons"),
                 unwind("classType"),
                 group("code", "name", "unit", "classType", "assessmentType")
@@ -233,17 +205,20 @@ public class CourseInfoService {
      * @param termName termName
      * @return raw query result
      */
-    public Document queryTermCourseTypes(String termName) {
-        String version = courseTermListStore.getTermMeta(termName).getVersion();
+    public Optional<List<String>> queryTermCourseTypes(String termName, String version) {
+//        String version = courseTermListStore.getTermMeta(termName).getDataVersion();
 
-        return executeAggregation(newAggregation(
+        Document queryResult = query(
                 project("term", "batchId").and("lessons.classType").as("classType"),
-                match(Criteria.where("term").is(termName).and("batchId").is(version)),
+                match(where("term").is(termName).and("batchId").is(version)),
                 unwind("classType"),
                 group().addToSet("classType").as("classTypes"),
                 project("classTypes")
                         .andExclude("_id")
-        )).getUniqueMappedResult();
+        ).getUniqueMappedResult();
+
+        if (queryResult == null) return Optional.empty();
+        return Optional.of(queryResult.get("classTypes", new ArrayList<>()));
     }
 
     /**
@@ -254,16 +229,80 @@ public class CourseInfoService {
      * @param termName termName
      * @return raw query result
      */
-    public Document queryTermClassrooms(String termName) {
-        String version = courseTermListStore.getTermMeta(termName).getVersion();
-
-        return executeAggregation(newAggregation(
+    public List<String> queryTermClassrooms(String termName, String version) {
+        Document queryResult = query(
                 project("term", "batchId").and("lessons.position").as("position"),
-                match(Criteria.where("term").is(termName).and("batchId").is(version)),
+                match(where("term").is(termName).and("batchId").is(version)),
                 unwind("position"),
                 group().addToSet("position").as("position"),
                 project("position")
                         .andExclude("_id")
-        )).getUniqueMappedResult();
+        ).getUniqueMappedResult();
+
+        return queryResult == null ? null : queryResult.get("position", new ArrayList<>());
     }
+
+    /**
+     * Query weeks that a class has lessons in a term
+     *
+     * @param termName term name
+     * @param clazz    class name
+     * @return list of week number
+     */
+    @NotNull
+    public List<Integer> queryWeeksOfClassByTerm(String termName, String clazz) {
+        return query(
+                project("term", "code", "name", "lessons"),
+
+                unwind("lessons"),
+                unwind("lessons.timePoint"),
+
+                match(where("term").is(termName)
+                        .and("lessons.classAttend").in(clazz)),
+
+                group().addToSet("lessons.timePoint.week").as("weeks"),
+
+                project("weeks").andExclude("_id")
+        ).getUniqueMappedResult().get("weeks", new ArrayList<>());
+    }
+
+
+    /**
+     * Query weeks that a teacher has lessons in a term
+     *
+     * @param termName term name
+     * @param teacher  teacher
+     * @return list of week number
+     */
+    public List<Integer> queryWeeksOfTeacherByTerm(String termName, String teacher) {
+        return query(
+                project("term", "code", "name", "lessons"),
+
+                unwind("lessons"),
+                unwind("lessons.timePoint"),
+
+                match(where("term").is(termName)
+                        .and("lessons.teacher").is(teacher)),
+
+                group().addToSet("lessons.timePoint.week").as("weeks"),
+
+                project("weeks").andExclude("_id")
+        ).getUniqueMappedResult().get("weeks", new ArrayList<>());
+    }
+
+    /**
+     * Query database directly
+     *
+     * @param aggregationOperation aggregation operations
+     * @return result
+     */
+    public AggregationResults<Document> query(AggregationOperation... aggregationOperation) {
+        return mongoTemplate.aggregate(newAggregation(aggregationOperation), mongoTemplate.getCollectionName(CourseEntity.class), Document.class);
+    }
+
+    /*
+     *
+     * Private procedure
+     *
+     * */
 }

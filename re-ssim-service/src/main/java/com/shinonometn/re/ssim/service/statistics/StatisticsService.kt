@@ -10,7 +10,9 @@ class StatisticsService(private val visitorCounterStore: VisitorCounterStore,
 
     fun increaseVisitorCount() = visitorCounterStore.increase()
 
-    fun getVisitorCounts() = visitorCounterStore.get()
+    fun getVisitorCounts(): Long {
+        return visitorCounterStore.get()
+    }
 
-    fun dashBoard(): Map<String, String> = caterpillarMonitorStore.all
+    fun dashBoard(): MutableMap<String, Long>? = caterpillarMonitorStore.all
 }

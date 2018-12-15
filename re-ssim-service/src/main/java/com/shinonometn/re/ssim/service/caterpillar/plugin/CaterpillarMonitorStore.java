@@ -1,39 +1,47 @@
 package com.shinonometn.re.ssim.service.caterpillar.plugin;
 
 import com.shinonometn.re.ssim.service.commons.InMemoryStoreAdapter;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.HashOperations;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
 
 @Component
-public class CaterpillarMonitorStore extends InMemoryStoreAdapter {
+public class CaterpillarMonitorStore extends InMemoryStoreAdapter<Long> {
 
-    private final HashOperations<String, String, String> store = redisTemplate.opsForHash();
-    private final String cacheKey = cacheKey();
+    private final HashOperations<String, String, Long> store = redisTemplate.opsForHash();
 
     private final static String KEY_CAPTURE_TASKS_COUNT = "captureTaskCount";
     private final static String KEY_IMPORT_TASK_COUNT = "importTaskCount";
 
-    protected CaterpillarMonitorStore(StringRedisTemplate redisTemplate) {
-        super(redisTemplate, "monitor.caterpillar");
+    protected CaterpillarMonitorStore(RedisConnectionFactory redisConnectionFactory) {
+        super(redisConnectionFactory, "monitor.caterpillar");
     }
 
     public void increaseCaptureTaskCount() {
-        store.putIfAbsent(cacheKey, KEY_CAPTURE_TASKS_COUNT, "0");
-        store.increment(cacheKey, KEY_CAPTURE_TASKS_COUNT, 1);
+        store.putIfAbsent(storeKey, KEY_CAPTURE_TASKS_COUNT, 0L);
+        store.increment(storeKey, KEY_CAPTURE_TASKS_COUNT, 1);
     }
 
     public void decreaseCaptureTaskCount() {
-        store.increment(cacheKey, KEY_CAPTURE_TASKS_COUNT, -1);
+        store.increment(storeKey, KEY_CAPTURE_TASKS_COUNT, -1);
+    }
+
+    public void increaseImportTaskCount(){
+        store.putIfAbsent(storeKey, KEY_IMPORT_TASK_COUNT, 0L);
+        store.increment(storeKey, KEY_IMPORT_TASK_COUNT, 1);
+    }
+
+    public void decreaseImportTaskCount(){
+        store.increment(storeKey, KEY_CAPTURE_TASKS_COUNT, -1);
     }
 
     public Integer getImportTaskCount() {
-        return Integer.valueOf(store.get(cacheKey, KEY_CAPTURE_TASKS_COUNT));
+        return Math.toIntExact(store.get(storeKey, KEY_IMPORT_TASK_COUNT));
     }
 
-    public Map<String,String> getAll() {
-        return store.entries(cacheKey);
+    public Map<String, Long> getAll() {
+        return store.entries(storeKey);
     }
 }

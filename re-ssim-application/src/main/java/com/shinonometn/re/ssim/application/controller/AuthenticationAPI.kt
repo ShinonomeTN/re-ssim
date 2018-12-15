@@ -15,6 +15,9 @@ import org.springframework.web.bind.annotation.*
 class AuthenticationAPI(private val userService: UserService,
                         private val validator: Validator) {
 
+    /**
+     * User login to system
+     */
     @PostMapping(params = ["login"])
     @ApiDescription(title = "User login", description = "Use username and password to login")
     fun login(@RequestBody loginForm: LoginForm,
@@ -37,6 +40,9 @@ class AuthenticationAPI(private val userService: UserService,
         })
     }
 
+    /**
+     * User logout from system
+     */
     @PostMapping(params = ["logout"])
     @ApiDescription(title = "User logout", description = "User logout")
     fun logout(): RexModel<Any> {
@@ -44,6 +50,9 @@ class AuthenticationAPI(private val userService: UserService,
         return RexModel.success()
     }
 
+    /**
+     * Current user info
+     */
     @GetMapping
     @RequiresAuthentication
     @ApiDescription(title = "Get current user permission info", description = "Get current user permission info")

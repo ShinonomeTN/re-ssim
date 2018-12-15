@@ -3,6 +3,7 @@ package com.shinonometn.re.ssim.service.caterpillar;
 import com.shinonometn.re.ssim.commons.BusinessException;
 import com.shinonometn.re.ssim.commons.CacheKeys;
 import com.shinonometn.re.ssim.commons.file.fundation.FileContext;
+import com.shinonometn.re.ssim.service.bus.MessageBus;
 import com.shinonometn.re.ssim.service.caterpillar.commons.ImportTaskStatus;
 import com.shinonometn.re.ssim.service.caterpillar.entity.CaptureTask;
 import com.shinonometn.re.ssim.service.caterpillar.entity.ImportTask;
@@ -12,6 +13,7 @@ import com.shinonometn.re.ssim.service.caterpillar.repository.ImportTaskReposito
 import com.shinonometn.re.ssim.service.caterpillar.task.CourseDataImportTask;
 import com.shinonometn.re.ssim.service.courses.CourseInfoService;
 import org.apache.commons.io.FileUtils;
+import org.bson.Document;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,9 +25,9 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.Optional;
 
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
@@ -47,13 +49,15 @@ public class ImportTaskService {
     private final CourseInfoService courseInfoService;
 
     private final TaskExecutor taskExecutor;
+    private final MessageBus messageBus;
 
     public ImportTaskService(CaptureTaskRepository captureTaskRepository,
                              ImportTaskRepository importTaskRepository,
                              MongoTemplate mongoTemplate, CaterpillarFileManageService fileManageService,
                              CaterpillarMonitorStore caterpillarMonitorStore,
                              CourseInfoService courseInfoService,
-                             TaskExecutor taskExecutor) {
+                             TaskExecutor taskExecutor,
+                             MessageBus messageBus) {
 
         this.captureTaskRepository = captureTaskRepository;
         this.importTaskRepository = importTaskRepository;
@@ -62,6 +66,7 @@ public class ImportTaskService {
         this.caterpillarMonitorStore = caterpillarMonitorStore;
         this.courseInfoService = courseInfoService;
         this.taskExecutor = taskExecutor;
+        this.messageBus = messageBus;
     }
 
     public Page<ImportTask> list(Pageable pageable) {
@@ -72,17 +77,17 @@ public class ImportTaskService {
         return importTaskRepository.save(importTask);
     }
 
-    public void delete(String taskId){
+    public void delete(String taskId) {
         ImportTask importTask = importTaskRepository
                 .findById(taskId)
                 .orElseThrow(() -> new BusinessException("import_task_not_exists"));
 
-        if(importTask.getStatus().equals(ImportTaskStatus.IMPORTING))
+        if (importTask.getStatus().equals(ImportTaskStatus.IMPORTING))
             throw new BusinessException("import_task_running");
 
         importTaskRepository.delete(importTask);
 
-        if(importTask.getCaptureTaskId() == null || !captureTaskRepository.existsById(importTask.getCaptureTaskId())) {
+        if (importTask.getCaptureTaskId() == null || !captureTaskRepository.existsById(importTask.getCaptureTaskId())) {
             try {
                 FileUtils.deleteDirectory(fileManageService.contextOf(importTask.getCaptureTaskId()).getFile());
             } catch (IOException e) {
@@ -98,29 +103,28 @@ public class ImportTaskService {
     @SuppressWarnings("ConstantConditions")
     public String latestVersionOf(String termName) {
         // Get latest version from finished import tasks
-        String result = mongoTemplate.query(ImportTask.class)
+        ImportTask latestTask = mongoTemplate.query(ImportTask.class)
                 .matching(query(where("termName").is(termName).and("finishDate").ne(null)))
                 .stream()
                 .max(Comparator.comparingLong(l -> l.getFinishDate().getTime()))
-                .orElse(null)
-                .getId();
-        if (result != null) return result;
+                .orElse(null);
+
+        if (latestTask != null && latestTask.getId() != null) return latestTask.getId();
 
         // If not found, find from exists courses
         // Because version id is batchId and it is UUID, so sort the
         // list and the latest item normally is the new version code
-        result = courseInfoService.executeAggregation(newAggregation(
+        return Optional.ofNullable(courseInfoService.query(
                 project("term", "batchId"),
                 match(where("term").is(termName)),
                 group("term").addToSet("batchId").as("versions"),
-                project("versions")))
-                .getUniqueMappedResult()
-                .get("versions", new HashSet<String>())
+                project("versions")
+        ).getUniqueMappedResult())
+                .orElse(new Document().append("versions", null))
+                .get("versions", new ArrayList<String>())
                 .stream()
                 .max(Comparator.naturalOrder())
-                .orElse("");
-
-        return result;
+                .orElse(null);
     }
 
     /**
@@ -153,7 +157,8 @@ public class ImportTaskService {
                 courseInfoService,
                 save(importTask),
                 caterpillarMonitorStore,
-                dataFolder
+                dataFolder,
+                messageBus
         ));
 
         return captureTask;

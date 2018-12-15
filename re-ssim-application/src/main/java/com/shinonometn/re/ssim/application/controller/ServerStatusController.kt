@@ -29,7 +29,7 @@ class ServerStatusController(private val courseInfoService: CourseInfoService,
     @GetMapping(params = ["statistics"])
     @RequiresPermissions("statistics:get")
     @ApiDescription(title = "Get api invoke count", description = "Show visit statistics.")
-    fun statistics(): Any = HashMap<String, Any>().apply {
+    fun statistics() = HashMap<String, Any>().apply {
         this["api_invoke"] = statisticsService.getVisitorCounts()
     }
 }

@@ -4,11 +4,12 @@ import com.shinonometn.re.ssim.service.caterpillar.common.SchoolCalendar
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import java.beans.Transient
+import java.io.Serializable
 import java.time.ZoneId
 import java.util.*
 
 @Document
-class SchoolCalendarEntity {
+class SchoolCalendarEntity : Serializable {
 
     @Id
     var id: String? = null

@@ -68,7 +68,7 @@ open class CaterpillarTaskManageAPI(private val caterpillarTaskService: Caterpil
     open fun create(@RequestParam("termCode") termCode: String): CaptureTask {
 
         val termList = caterpillarTaskService.termList
-        if (!termList.containsKey(termCode)) throw BusinessException("term_unknown");
+        if (!termList.containsKey(termCode)) throw BusinessException("term_unknown")
         return caterpillarTaskService.create(termCode)
 
     }
@@ -84,7 +84,7 @@ open class CaterpillarTaskManageAPI(private val caterpillarTaskService: Caterpil
     @RequiresPermissions("task:start")
     open fun start(@PathVariable("id") id: String, @RequestParam("profile") profileName: String, session: HttpSession): Any {
 
-        val username = WebSubjectUtils.currentUser().username;
+        val username = WebSubjectUtils.currentUser().username
 
         val caterpillarSettings = caterpillarDataService
                 .findProfile(username!!, profileName)

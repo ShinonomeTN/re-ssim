@@ -16,22 +16,10 @@ class CourseQueryAPI(@Autowired private val courseInfoService: CourseInfoService
      * Query weeks of a class that has lessons
      *
      */
-    @GetMapping("/{term}/class/{clazzName}/weeks")
+    @GetMapping("/{term}/class/{clazzName}/week")
     fun showClassTermWeeks(@PathVariable("term") term: String,
-                           @PathVariable("clazzName") clazz: String): Any? =
-            courseInfoService.executeAggregation(newAggregation(
-                    project("term", "code", "name", "lessons"),
-
-                    unwind("lessons"),
-                    unwind("lessons.timePoint"),
-
-                    match(where("term").`is`(term)
-                            .and("lessons.classAttend").`in`(clazz)),
-
-                    group().addToSet("lessons.timePoint.week").`as`("weeks"),
-
-                    project("weeks").andExclude("_id")
-            )).uniqueMappedResult
+                           @PathVariable("clazzName") clazz: String): MutableList<Int> =
+            courseInfoService.queryWeeksOfClassByTerm(term, clazz)
 
     /**
      *
@@ -44,7 +32,7 @@ class CourseQueryAPI(@Autowired private val courseInfoService: CourseInfoService
                               @PathVariable("class") clazz: String,
                               @RequestParam("week", required = true) week: Int,
                               @RequestParam("excludedType", required = false) excludedType: List<String>?): Any =
-            courseInfoService.executeAggregation(newAggregation(
+            courseInfoService.query(
 
                     // Project necessary fields
                     project("term", "code", "name", "lessons"),
@@ -86,30 +74,18 @@ class CourseQueryAPI(@Autowired private val courseInfoService: CourseInfoService
                             .and("_id").`as`("timePoint")
                             .andExclude("_id")
 
-            )).mappedResults
+            ).mappedResults
 
 
     /**
      *
-     * Query weeks of a class that has lessons
+     * Query weeks that teacher has lessons
      *
      */
     @GetMapping("/{term}/teacher/{teacher}/weeks")
     fun showTeacherTermWeeks(@PathVariable("term") term: String,
                              @PathVariable("teacher") teacher: String): Any? =
-            courseInfoService.executeAggregation(newAggregation(
-                    project("term", "code", "name", "lessons"),
-
-                    unwind("lessons"),
-                    unwind("lessons.timePoint"),
-
-                    match(where("term").`is`(term)
-                            .and("lessons.teacher").`is`(teacher)),
-
-                    group().addToSet("lessons.timePoint.week").`as`("weeks"),
-
-                    project("weeks").andExclude("_id")
-            )).uniqueMappedResult
+            courseInfoService.queryWeeksOfTeacherByTerm(term, teacher)
 
     /**
      *
@@ -120,7 +96,7 @@ class CourseQueryAPI(@Autowired private val courseInfoService: CourseInfoService
     fun queryTeacherWeekCourses(@PathVariable("term") term: String,
                                 @PathVariable("teacher") teacher: String,
                                 @RequestParam("week") week: Int): Any =
-            courseInfoService.executeAggregation(newAggregation(
+            courseInfoService.query(
 
                     // Project necessary fields
                     project("term", "code", "name", "lessons"),
@@ -146,5 +122,5 @@ class CourseQueryAPI(@Autowired private val courseInfoService: CourseInfoService
                     project("lessons")
                             .and("_id").`as`("timePoint")
                             .andExclude("_id")
-            )).mappedResults
+            ).mappedResults
 }

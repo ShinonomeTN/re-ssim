@@ -1,10 +1,11 @@
 package com.shinonometn.re.ssim.service.statistics.entity
 
 import org.springframework.data.mongodb.core.mapping.Document
+import java.io.Serializable
 import java.util.*
 
 @Document
-class ApiEndpointInfo {
+class ApiEndpointInfo: Serializable {
 
     var id : String? = null
 

@@ -62,7 +62,7 @@ class UserInfoPrepareTask(
                 close()
             }
 
-            log.info("System has no user, create default user $defaultUsername, password $defaultPassword(hashed)." +
+            log.info("System has no user, create default user $defaultUsername, password ${user.password}(hashed)." +
                     " You can check superUser.txt under data directory for details.")
 
             user
@@ -72,27 +72,26 @@ class UserInfoPrepareTask(
         if (permissionInfo.isPresent) return
 
         val superPowerRoleName = "superUser"
-        roleService.findByName(superPowerRoleName).orElseGet {
+        val superPowerRole = roleService.findByName(superPowerRoleName).orElseGet {
             roleService.save(Role().apply {
                 name = superPowerRoleName
                 enabled = true
                 permissions.add("*")
             })
-        }.apply {
-            // If the role disabled (probably not happen) force enable it
-            if (!enabled) enabled = true
-            roleService.save(this)
-        }.also {
-            log.info("Created role with name $superPowerRoleName")
-        }.run {
-            // Grant permission to the user
-            permissionService.save(Permission().apply {
-                user = defaultUser.username
-                roles.add(name!!)
-            })
-
-            log.info("Granted super power to $name")
         }
+        // If the role disabled (probably not happen) force enable it
+        if (!superPowerRole.enabled) superPowerRole.enabled = true
+        roleService.save(superPowerRole)
+        log.info("Created role with name $superPowerRoleName")
+
+
+        // Grant permission to the user
+        permissionService.save(Permission().apply {
+            user = defaultUser.username
+            roles.add(superPowerRole.name!!)
+        })
+
+        log.info("Granted super power to role ${superPowerRole.name}")
     }
 
 }

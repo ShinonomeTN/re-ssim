@@ -70,7 +70,7 @@ public class CaterpillarTaskService {
      * <p>
      * if cache not found, load from remote and cache it
      *
-     * @return a map, termName code as key, termName name as value
+     * @return a map, term code as key, term name as value
      */
     @Cacheable(CacheKeys.CAPTURE_TERM_LIST)
     @NotNull
@@ -195,6 +195,7 @@ public class CaterpillarTaskService {
         CaptureTask captureTask = captureTaskDetails.getTaskInfo();
 
         changeCaptureTaskStatus(captureTask, CaptureTaskStage.INITIALIZE, "task_initialing");
+        caterpillarMonitorStore.increaseCaptureTaskCount();
 
         taskExecutor.execute(() -> {
 
@@ -204,6 +205,8 @@ public class CaterpillarTaskService {
                 Site site = doLogin(caterpillarSetting);
 
                 FileContext dataFolder = fileManageService.contextOf(taskId);
+                if (!dataFolder.exists() && !dataFolder.getFile().mkdirs())
+                    throw new BusinessException("Could not create work directory for task");
 
                 Spider spider = Spider.create(new CourseDetailsPageProcessor(site))
                         .addPipeline((resultItems, task) -> {
@@ -231,6 +234,8 @@ public class CaterpillarTaskService {
 
             } catch (BusinessException e) {
                 changeCaptureTaskStatus(captureTask, null, "failed:" + e.getMessage());
+            } finally {
+                caterpillarMonitorStore.decreaseCaptureTaskCount();
             }
         });
 

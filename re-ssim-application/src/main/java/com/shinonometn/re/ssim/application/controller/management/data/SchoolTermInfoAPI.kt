@@ -7,8 +7,10 @@ import com.shinonometn.re.ssim.service.courses.SchoolCalendarService
 import com.shinonometn.re.ssim.service.courses.SchoolTermInfoService
 import com.shinonometn.re.ssim.service.courses.entity.SchoolCalendarEntity
 import com.shinonometn.re.ssim.service.courses.entity.TermInfo
+import com.shinonometn.re.ssim.service.courses.plugin.CourseTermListStore
 import com.shiononometn.commons.web.RexModel
 import org.apache.shiro.authz.annotation.RequiresPermissions
+import org.springframework.beans.BeanUtils
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.web.PageableDefault
@@ -18,7 +20,8 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping("/school")
 class SchoolTermInfoAPI(private val schoolTermInfoService: SchoolTermInfoService,
                         private val schoolCalendarService: SchoolCalendarService,
-                        private val validator: Validator) {
+                        private val validator: Validator,
+                        private val courseTermListStore: CourseTermListStore) {
 
     /*
     *
@@ -32,7 +35,9 @@ class SchoolTermInfoAPI(private val schoolTermInfoService: SchoolTermInfoService
     fun listTerms(@PageableDefault pageable: Pageable): Page<TermInfo> =
             schoolTermInfoService.list(pageable).map {
                 TermInfo().apply {
-                    term = this
+                    term = it
+                    hasLocalCourseData = courseTermListStore.contains(it.name)
+                    hasLocalCalendarData = schoolCalendarService.existsByTermName(it.name)
                 }
             }
 
@@ -60,28 +65,31 @@ class SchoolTermInfoAPI(private val schoolTermInfoService: SchoolTermInfoService
     @RequiresPermissions("calendar:update")
     @ApiDescription(title = "Update a calendar", description = "Update the calendar belong to a term")
     fun pullCalendar(@PathVariable("termCode") termCode: String): RexModel<Any> {
-        schoolCalendarService.pull(schoolTermInfoService.get(termCode) ?: throw BusinessException("term_not_exists"))
+        schoolCalendarService.pull(schoolTermInfoService.findByTermCode(termCode).orElseThrow { BusinessException("term_not_exists") })
         return RexModel.success()
     }
 
-    @PostMapping("/calendar/{termCode}")
+    @PostMapping("/calendar")
     @RequiresPermissions("calendar:write")
     @ApiDescription(title = "Edit a calendar", description = "Edit a calendar")
-    fun editCalendar(@RequestBody calendarEntity: SchoolCalendarEntity): SchoolCalendarEntity {
+    fun editCalendar(@RequestBody form: SchoolCalendarEntity): SchoolCalendarEntity {
 
-        validator.validate(calendarEntity)
+        validator.validate(form)
 
-        val calendar = schoolCalendarService.findByTermCode(calendarEntity.term).orElseGet {
-            val term = schoolTermInfoService.get(calendarEntity.term)
+        // Find an exists calendar or create a new one
+        val calendar = schoolCalendarService.findById(form.id).orElseGet {
             SchoolCalendarEntity().apply {
-                termName = term.name
+                schoolTermInfoService.findByTermName(form.termName).ifPresent {
+                    this.termName = it.name
+                    this.term = it.code
+                }
             }
         }
 
-        calendar.apply {
-            startDate = calendarEntity.startDate
-            endDate = calendarEntity.endDate
-        }
+        if (form.term != null) calendar.term = form.term
+        if (form.termName != null) calendar.termName = form.termName
+
+        BeanUtils.copyProperties(form, calendar, "id", "createTime", "term", "termName")
 
         return schoolCalendarService.save(calendar)
     }

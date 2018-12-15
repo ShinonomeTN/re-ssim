@@ -11,7 +11,7 @@ spring:
     type: redis
     redis:
       time-to-live: 6H
-      key-prefix: app:cache
+#      key-prefix: app.cache.
   http:
     encoding:
       enabled: true
@@ -21,7 +21,7 @@ spring:
     store-type: redis
     redis:
       flush-mode: on_save
-      namespace: web:session
+      namespace: web.session.
 
 app:
 #  cache:

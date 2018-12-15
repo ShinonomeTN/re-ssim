@@ -29,8 +29,6 @@ class DataImportTaskManageAPI(private val caterpillarTaskService: CaterpillarTas
 
         val captureTaskDetails = caterpillarTaskService.queryTask(id) ?: throw BusinessException("task_not_found")
 
-        if (captureTaskDetails.taskInfo.finished) throw BusinessException("task_finished")
-
         if (captureTaskDetails.runningTaskStatus != null && captureTaskDetails.runningTaskStatus!!.status == "Running")
             throw BusinessException("spider_running")
 

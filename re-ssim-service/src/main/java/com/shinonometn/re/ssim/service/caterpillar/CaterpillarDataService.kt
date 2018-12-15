@@ -14,5 +14,5 @@ class CaterpillarDataService(private val caterpillarSettingRepository: Caterpill
     fun findAll(pageable: Pageable): Page<CaterpillarSetting> = caterpillarSettingRepository.findAll(pageable)
     fun findAllByUser(username: String, pageable: Pageable): Page<CaterpillarSetting> = caterpillarSettingRepository.findAllByOwner(username, pageable)
 
-
+    fun findById(id : String) : Optional<CaterpillarSetting> = caterpillarSettingRepository.findById(id)
 }

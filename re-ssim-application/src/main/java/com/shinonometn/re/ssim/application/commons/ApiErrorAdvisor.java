@@ -1,5 +1,6 @@
 package com.shinonometn.re.ssim.application.commons;
 
+import com.shinonometn.re.ssim.commons.BusinessException;
 import com.shinonometn.re.ssim.commons.validation.ValidationException;
 import com.shiononometn.commons.web.RexModel;
 import org.apache.shiro.authc.AuthenticationException;
@@ -24,5 +25,10 @@ public class ApiErrorAdvisor {
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<RexModel> authenticationException(AuthenticationException exception) {
         return ResponseEntity.ok(RexModel.error("authentication_error").withMessage(exception.getMessage()));
+    }
+
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<RexModel> businessException(BusinessException exception) {
+        return ResponseEntity.ok(RexModel.error(exception.getError()).withMessage(exception.getMessage()));
     }
 }

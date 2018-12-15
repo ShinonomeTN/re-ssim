@@ -4,9 +4,10 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.springframework.data.annotation.Id
 import us.codecraft.webmagic.Site
+import java.io.Serializable
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-class CaterpillarSetting {
+class CaterpillarSetting: Serializable {
 
     /*
         Base info

@@ -3,6 +3,8 @@ package com.shinonometn.re.ssim.service.caterpillar.task
 import com.shinonometn.re.ssim.commons.BusinessException
 import com.shinonometn.re.ssim.commons.JSON
 import com.shinonometn.re.ssim.commons.file.fundation.FileContext
+import com.shinonometn.re.ssim.service.bus.Message
+import com.shinonometn.re.ssim.service.bus.MessageBus
 import com.shinonometn.re.ssim.service.caterpillar.ImportTaskService
 import com.shinonometn.re.ssim.service.caterpillar.commons.ImportTaskStatus
 import com.shinonometn.re.ssim.service.caterpillar.entity.ImportTask
@@ -19,7 +21,8 @@ class CourseDataImportTask(private val importTaskService: ImportTaskService,
                            private val courseInfoService: CourseInfoService,
                            private val importTask: ImportTask,
                            private val caterpillarMonitorStore: CaterpillarMonitorStore,
-                           private val dataFolder: FileContext) : Runnable {
+                           private val dataFolder: FileContext,
+                           private val messageBus: MessageBus) : Runnable {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -31,7 +34,7 @@ class CourseDataImportTask(private val importTaskService: ImportTaskService,
             importTask.status = ImportTaskStatus.IMPORTING
             importTask.statusReport = "load_data_to_database"
             importTaskService.save(importTask)
-            caterpillarMonitorStore.increaseCaptureTaskCount()
+            caterpillarMonitorStore.increaseImportTaskCount()
 
             loadDataToDatabase()
 
@@ -42,6 +45,9 @@ class CourseDataImportTask(private val importTaskService: ImportTaskService,
             importTask.finishDate = Date()
             importTaskService.save(importTask)
 
+            // Send a message to bus
+            messageBus.emit(Message("import.finished",importTask))
+
         } catch (e: IOException) {
             logger.error("Something happen while importing files, reversing. Batch Id :$batchId", e)
             importTask.status = ImportTaskStatus.ERROR
@@ -49,7 +55,7 @@ class CourseDataImportTask(private val importTaskService: ImportTaskService,
             importTaskService.save(importTask)
             cleanOnFail()
         } finally {
-            caterpillarMonitorStore.decreaseCaptureTaskCount()
+            caterpillarMonitorStore.decreaseImportTaskCount()
         }
     }
 

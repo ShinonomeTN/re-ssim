@@ -5,6 +5,7 @@ import com.shinonometn.re.ssim.service.caterpillar.kingo.capture.CalendarPagePro
 import com.shinonometn.re.ssim.service.courses.entity.SchoolCalendarEntity;
 import com.shinonometn.re.ssim.service.courses.entity.TermInfoEntity;
 import com.shinonometn.re.ssim.service.courses.repository.SchoolCalendarEntityRepository;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -65,11 +66,9 @@ public class SchoolCalendarService {
                         .getCalendarRangeInfo(r)
                         .stream()
                         .map(e -> {
-                            SchoolCalendarEntity calendarEntity = schoolCalendarEntityRepository
-                                    .findByTerm(termCode)
+                            SchoolCalendarEntity calendarEntity = schoolCalendarEntityRepository.findByTermName(e.termName)
                                     .orElse(new SchoolCalendarEntity());
 
-                            calendarEntity.setTerm(termCode);
                             calendarEntity.setTermName(e.termName);
                             calendarEntity.setStartDate(e.startDate);
                             calendarEntity.setEndDate(e.endDate);
@@ -91,5 +90,13 @@ public class SchoolCalendarService {
 
     public Optional<SchoolCalendarEntity> findByTermCode(@Nullable String term) {
         return schoolCalendarEntityRepository.findByTerm(term);
+    }
+
+    public boolean existsByTermName(@Nullable String name) {
+        return schoolCalendarEntityRepository.existsByTermName(name);
+    }
+
+    public Optional<SchoolCalendarEntity> findById(String id) {
+        return schoolCalendarEntityRepository.findById(id);
     }
 }
