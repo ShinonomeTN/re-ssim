@@ -30,7 +30,7 @@ public class CourseTermListStore extends InMemoryStoreAdapter<TermMeta> {
     }
 
     public boolean isEmpty() {
-        return redisTemplate.hasKey(storeKey);
+        return !redisTemplate.hasKey(storeKey);
     }
 
     public void update(String termName, TermMeta meta) {
