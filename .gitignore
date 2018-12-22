@@ -1,4 +1,5 @@
 /*/target/
+targe/
 !.mvn/wrapper/maven-wrapper.jar
 
 /data

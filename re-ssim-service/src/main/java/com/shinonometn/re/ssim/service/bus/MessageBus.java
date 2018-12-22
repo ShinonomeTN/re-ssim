@@ -33,8 +33,8 @@ public class MessageBus {
     }
 
     public synchronized void register(Listener listener) {
-        if(!registeredListeners.containsKey(listener.getTopic()))
-            registeredListeners.put(listener.getTopic(),new Vector<>());
+        if (!registeredListeners.containsKey(listener.getTopic()))
+            registeredListeners.put(listener.getTopic(), new Vector<>());
 
         registeredListeners.get(listener.getTopic()).add(listener);
     }
@@ -65,26 +65,29 @@ public class MessageBus {
             while (!shutdown.get()) {
                 try {
                     Message message = messageQueue.poll();
-                    List<Listener> listeners = registeredListeners.keySet()
-                            .stream()
-                            .filter(s -> s.equals(message.getTopic()) || s.startsWith(message.getTopic()))
-                            .map(k -> registeredListeners.get(k))
-                            .flatMap(Collection::stream)
-                            .collect(Collectors.toList());
+                    if (message == null) Thread.sleep(500);
+                    else {
+                        List<Listener> listeners = registeredListeners.keySet()
+                                .stream()
+                                .filter(s -> s.equals(message.getTopic()) || s.startsWith(message.getTopic()))
+                                .map(k -> registeredListeners.get(k))
+                                .flatMap(Collection::stream)
+                                .collect(Collectors.toList());
 
-                    if (message != null && listeners.size() <= 0)
-                        logger.warn("Got a message, but no one accept it, it will be drop: {}", message.getTopic());
-                    else
-                        listeners.stream().parallel().forEach(l -> {
-                            try{
-                                l.getWorks().accept(message);
-                            } catch (Exception ignore){
+                        if (message != null && listeners.size() <= 0)
+                            logger.warn("Got a message, but no one accept it, it will be drop: {}", message.getTopic());
+                        else
+                            listeners.stream().parallel().forEach(l -> {
+                                try {
+                                    l.getWorks().accept(message);
+                                } catch (Exception ignore) {
 
-                            }
-                        });
+                                }
+                            });
 
-                    messageCount.incrementAndGet();
-                    Thread.sleep(300);
+                        messageCount.incrementAndGet();
+                        logger.debug("Message {} consumed by {} listener(s)", message.getTopic(), listeners.size());
+                    }
                 } catch (Exception ignore) {
 
                 }

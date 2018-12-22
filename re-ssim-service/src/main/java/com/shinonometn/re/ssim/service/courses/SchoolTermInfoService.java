@@ -49,7 +49,13 @@ public class SchoolTermInfoService {
         messageBus.register(new Listener("import.finished", o -> {
             ImportTask task = (ImportTask) o.getPayload();
             TermInfoEntity termInfoEntity = findByTermName(task.getTermName())
-                    .orElseThrow(() -> new BusinessException("Could not found a term named " + task.getTermName()));
+//                    .orElseThrow(() -> new BusinessException("Could not found a term named " + task.getTermName()));
+            .orElseGet(() -> {
+                TermInfoEntity newEntity = new TermInfoEntity();
+                newEntity.setName(task.getTermName());
+                newEntity.setCode(task.getTermCode());
+                return newEntity;
+            });
 
             termInfoEntity.setDataVersion(task.getId());
             save(termInfoEntity);

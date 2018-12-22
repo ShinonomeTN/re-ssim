@@ -1,14 +1,17 @@
 package com.shinonometn.re.ssim.service.bus;
 
+import org.jetbrains.annotations.NotNull;
+
 public class Message {
     private String topic;
     private Object payload;
 
-    public Message(String topic, Object payload) {
+    public Message(@NotNull String topic, Object payload) {
         this.topic = topic;
         this.payload = payload;
     }
 
+    @NotNull
     public String getTopic() {
         return topic;
     }

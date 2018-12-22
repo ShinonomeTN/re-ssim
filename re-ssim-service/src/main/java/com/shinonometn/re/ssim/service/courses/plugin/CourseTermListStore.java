@@ -2,8 +2,10 @@ package com.shinonometn.re.ssim.service.courses.plugin;
 
 import com.shinonometn.re.ssim.service.commons.InMemoryStoreAdapter;
 import com.shinonometn.re.ssim.service.courses.plugin.structure.TermMeta;
+import org.apache.commons.codec.binary.Hex;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.core.BoundHashOperations;
 import org.springframework.data.redis.core.HashOperations;
 import org.springframework.stereotype.Component;
 
@@ -14,16 +16,17 @@ import java.util.Optional;
 @Component
 public class CourseTermListStore extends InMemoryStoreAdapter<TermMeta> {
 
-    private final HashOperations<String, String, TermMeta> store = redisTemplate.opsForHash();
+    private final BoundHashOperations<String,String,TermMeta> store;
 
     protected CourseTermListStore(RedisConnectionFactory redisConnectionFactory) {
         super(redisConnectionFactory, "term.info");
+        store = redisTemplate.boundHashOps(storeKey);
     }
 
     public Collection<TermMeta> getAll() {
         if (!redisTemplate.hasKey(storeKey)) return null;
 
-        return store.entries(storeKey).values();
+        return store.values();
     }
 
     public boolean isEmpty() {
@@ -31,19 +34,19 @@ public class CourseTermListStore extends InMemoryStoreAdapter<TermMeta> {
     }
 
     public void update(String termName, TermMeta meta) {
-        store.put(storeKey, termName, meta);
+        store.put(termName, meta);
     }
 
     public void putAll(Map<String, TermMeta> termMetas) {
-        store.putAll(storeKey, termMetas);
+        store.putAll(termMetas);
     }
 
     @SuppressWarnings("ConstantConditions")
     public TermMeta getTermMeta(String termName) {
-        return Optional.ofNullable(store.get(storeKey, termName)).orElse(new TermMeta());
+        return Optional.ofNullable(store.get(termName)).orElse(new TermMeta());
     }
 
     public boolean contains(String name) {
-        return store.hasKey(storeKey,name);
+        return store.hasKey(name);
     }
 }

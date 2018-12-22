@@ -77,12 +77,10 @@ public abstract class InMemoryStoreAdapter<T> implements InMemoryStore {
         };
 
         // Setting serializers
-        redisTemplate.setDefaultSerializer(valueSerializer);
-
-        redisTemplate.setKeySerializer(keySerializer);
-        redisTemplate.setHashKeySerializer(keySerializer);
+        redisTemplate.setDefaultSerializer(keySerializer);
 
         redisTemplate.setValueSerializer(valueSerializer);
+        redisTemplate.setHashValueSerializer(valueSerializer);
 
         redisTemplate.afterPropertiesSet();
 
