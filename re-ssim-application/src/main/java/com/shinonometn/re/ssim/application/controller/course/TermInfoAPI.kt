@@ -34,7 +34,7 @@ open class TermInfoAPI(private val courseInfoService: CourseInfoService,
      *
      */
     @GetMapping("/{name}/course")
-    @Cacheable(key = CacheKeys.TERM_COURSE_LIST)
+    @Cacheable(CacheKeys.TERM_COURSE_LIST)
     open fun listTermCourse(@PathVariable("name") termName: String): Any =
             courseInfoService.queryTermCourse(termName, courseTermListStore.getTermMeta(termName).dataVersion)
 

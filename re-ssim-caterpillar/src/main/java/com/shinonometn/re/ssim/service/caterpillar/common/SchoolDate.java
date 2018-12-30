@@ -1,5 +1,7 @@
 package com.shinonometn.re.ssim.service.caterpillar.common;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import java.time.DayOfWeek;
 import java.util.Objects;
 
@@ -34,6 +36,7 @@ public class SchoolDate {
         this.week = week;
     }
 
+    @JsonFormat(shape = JsonFormat.Shape.NUMBER)
     public DayOfWeek getDay() {
         return day;
     }
