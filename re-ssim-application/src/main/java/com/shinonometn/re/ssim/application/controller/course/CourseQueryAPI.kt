@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.mongodb.core.aggregation.Aggregation.*
 import org.springframework.data.mongodb.core.query.Criteria.where
 import org.springframework.web.bind.annotation.*
+import java.util.*
 
 @RestController
 @RequestMapping("/term")
@@ -19,7 +20,9 @@ class CourseQueryAPI(@Autowired private val courseInfoService: CourseInfoService
     @GetMapping("/{term}/class/{clazzName}/week")
     fun showClassTermWeeks(@PathVariable("term") term: String,
                            @PathVariable("clazzName") clazz: String): MutableList<Int> =
-            courseInfoService.queryWeeksOfClassByTerm(term, clazz)
+            courseInfoService
+                    .queryWeeksOfClassByTerm(term, clazz)
+                    .orElse(Collections.emptyList())
 
     /**
      *
@@ -85,7 +88,9 @@ class CourseQueryAPI(@Autowired private val courseInfoService: CourseInfoService
     @GetMapping("/{term}/teacher/{teacher}/weeks")
     fun showTeacherTermWeeks(@PathVariable("term") term: String,
                              @PathVariable("teacher") teacher: String): Any? =
-            courseInfoService.queryWeeksOfTeacherByTerm(term, teacher)
+            courseInfoService
+                    .queryWeeksOfTeacherByTerm(term, teacher)
+                    .orElse(Collections.emptyList())
 
     /**
      *

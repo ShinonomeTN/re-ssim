@@ -1,6 +1,7 @@
 package com.shinonometn.re.ssim.service.courses;
 
 import com.mongodb.client.result.DeleteResult;
+import com.mongodb.connection.QueryResult;
 import com.shinonometn.re.ssim.commons.CacheKeys;
 import com.shinonometn.re.ssim.service.courses.entity.CourseEntity;
 import com.shinonometn.re.ssim.service.courses.plugin.CourseTermListStore;
@@ -24,6 +25,7 @@ import java.util.Optional;
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 
+@SuppressWarnings("ALL")
 @Service
 public class CourseInfoService {
 
@@ -102,9 +104,9 @@ public class CourseInfoService {
      * @param termName termName
      * @return query result, list of teacher names
      */
-    public List<String> queryTermTeachers(String termName, String version) {
+    public Optional<List<String>> queryTermTeachers(String termName, String version) {
 
-        return query(
+        Document queryResult = query(
                 project("term", "batchId").and("lessons.teacher").as("teachers"),
 
                 match(where("term").is(termName)
@@ -115,7 +117,9 @@ public class CourseInfoService {
                 group().addToSet("teachers").as("teachers"),
 
                 project().andExclude("_id")
-        ).getUniqueMappedResult().get("teachers", new ArrayList<>());
+        ).getUniqueMappedResult();
+
+        return queryResult == null ? Optional.empty() : Optional.of(queryResult.get("teachers", new ArrayList<>()));
     }
 
     /**
@@ -126,8 +130,8 @@ public class CourseInfoService {
      * @param termName termName
      * @return query result, list of class names
      */
-    public List<String> queryTermClasses(String termName, String version) {
-        return query(
+    public Optional<List<String>> queryTermClasses(String termName, String version) {
+        Document queryResult = query(
                 project("term", "batchId")
                         .and("lessons.classAttend").as("classAttend"),
 
@@ -140,7 +144,9 @@ public class CourseInfoService {
                 group().addToSet("classAttend").as("classes"),
 
                 project().andExclude("_id")
-        ).getUniqueMappedResult().get("classes", new ArrayList<>());
+        ).getUniqueMappedResult();
+
+        return queryResult == null ? Optional.empty() : Optional.of(queryResult.get("classes", new ArrayList<>()));
     }
 
     /**
@@ -173,9 +179,8 @@ public class CourseInfoService {
                 project().andExclude("_id")
         ).getUniqueMappedResult();
 
-        if (document == null) return Optional.empty();
+        return document == null ? Optional.empty() : Optional.of(Range.between(document.getInteger("min"), document.getInteger("max")));
 
-        return Optional.of(Range.between(document.getInteger("min"), document.getInteger("max")));
     }
 
     /**
@@ -186,15 +191,15 @@ public class CourseInfoService {
      * @param termName termName
      * @return raw query result
      */
-    public List<Document> queryTermCourse(String termName, String version) {
-        return executeAggregation(newAggregation(
+    public Optional<List<Document>> queryTermCourse(String termName, String version) {
+        return Optional.ofNullable(executeAggregation(newAggregation(
                 project("term", "code", "name", "unit", "lessons", "assessmentType", "batchId")
                         .and("lessons.classType").as("classType"),
                 match(where("term").is(termName).and("batchId").is(version)),
                 unwind("lessons"),
                 unwind("classType"),
                 group("code", "name", "unit", "classType", "assessmentType")
-        )).getMappedResults();
+        )).getMappedResults());
     }
 
     /**
@@ -217,8 +222,7 @@ public class CourseInfoService {
                         .andExclude("_id")
         ).getUniqueMappedResult();
 
-        if (queryResult == null) return Optional.empty();
-        return Optional.of(queryResult.get("classTypes", new ArrayList<>()));
+        return queryResult == null ? Optional.empty() : Optional.of(queryResult.get("classTypes", new ArrayList<>()));
     }
 
     /**
@@ -250,8 +254,8 @@ public class CourseInfoService {
      * @return list of week number
      */
     @NotNull
-    public List<Integer> queryWeeksOfClassByTerm(String termName, String clazz) {
-        return query(
+    public Optional<List<Integer>> queryWeeksOfClassByTerm(String termName, String clazz) {
+        Document queryResult = query(
                 project("term", "code", "name", "lessons"),
 
                 unwind("lessons"),
@@ -263,7 +267,9 @@ public class CourseInfoService {
                 group().addToSet("lessons.timePoint.week").as("weeks"),
 
                 project("weeks").andExclude("_id")
-        ).getUniqueMappedResult().get("weeks", new ArrayList<>());
+        ).getUniqueMappedResult();
+
+        return queryResult == null ? Optional.empty() : Optional.of(queryResult.get("weeks", new ArrayList<>()));
     }
 
 
@@ -274,8 +280,8 @@ public class CourseInfoService {
      * @param teacher  teacher
      * @return list of week number
      */
-    public List<Integer> queryWeeksOfTeacherByTerm(String termName, String teacher) {
-        return query(
+    public Optional<List<Integer>> queryWeeksOfTeacherByTerm(String termName, String teacher) {
+        Document queryResult = query(
                 project("term", "code", "name", "lessons"),
 
                 unwind("lessons"),
@@ -287,7 +293,9 @@ public class CourseInfoService {
                 group().addToSet("lessons.timePoint.week").as("weeks"),
 
                 project("weeks").andExclude("_id")
-        ).getUniqueMappedResult().get("weeks", new ArrayList<>());
+        ).getUniqueMappedResult();
+
+        return queryResult == null ? Optional.empty() : Optional.of(queryResult.get("weeks", new ArrayList<>()));
     }
 
     /**

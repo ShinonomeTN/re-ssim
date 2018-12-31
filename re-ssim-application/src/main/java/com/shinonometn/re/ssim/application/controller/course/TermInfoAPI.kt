@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import java.util.*
 
 @RestController
 @RequestMapping("/term")
@@ -36,7 +37,9 @@ open class TermInfoAPI(private val courseInfoService: CourseInfoService,
     @GetMapping("/{name}/course")
     @Cacheable(CacheKeys.TERM_COURSE_LIST)
     open fun listTermCourse(@PathVariable("name") termName: String): Any =
-            courseInfoService.queryTermCourse(termName, courseTermListStore.getTermMeta(termName).dataVersion)
+            courseInfoService
+                    .queryTermCourse(termName, courseTermListStore.getTermMeta(termName).dataVersion)
+                    .orElse(Collections.emptyList())
 
     /**
      *
@@ -46,7 +49,9 @@ open class TermInfoAPI(private val courseInfoService: CourseInfoService,
     @GetMapping("/{name}/teacher")
     @Cacheable(CacheKeys.TERM_TEACHER_LIST)
     open fun listTermTeachers(@PathVariable("name") termName: String): Any? =
-            courseInfoService.queryTermTeachers(termName, courseTermListStore.getTermMeta(termName).dataVersion)
+            courseInfoService
+                    .queryTermTeachers(termName, courseTermListStore.getTermMeta(termName).dataVersion)
+                    .orElse(Collections.emptyList())
 
     /**
      *
@@ -56,7 +61,9 @@ open class TermInfoAPI(private val courseInfoService: CourseInfoService,
     @GetMapping("/{name}/class")
     @Cacheable(CacheKeys.TERM_CLASS_LIST)
     open fun listTermClasses(@PathVariable("name") termName: String): Any? =
-            courseInfoService.queryTermClasses(termName, courseTermListStore.getTermMeta(termName).dataVersion)
+            courseInfoService
+                    .queryTermClasses(termName, courseTermListStore.getTermMeta(termName).dataVersion)
+                    .orElse(Collections.emptyList())
 
     /**
      *
