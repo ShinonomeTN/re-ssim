@@ -25,7 +25,7 @@ open class WebFormValidationConfiguration {
     @Language("RegExp")
     private val caterpillarUsernameValidator = ValidationFunctions.forRegex("^[A-Za-z\\d_-]{1,32}$")
     private val caterpillarEncodingValidator = ValidationFunctions.forRegex("^(utf8|UTF8|gbk|GBK|gbk2312|GBK2312)$")
-    private val caterpillarThreadValidator = ValidationFunctions.forLength(1, 8)
+    private val caterpillarThreadValidator = ValidationFunctions.forRange(1, 8)
 
     private val notNullValidator = ValidationFunctions.notNull()
     private val nullValidator = ValidationFunctions.shouldNull()

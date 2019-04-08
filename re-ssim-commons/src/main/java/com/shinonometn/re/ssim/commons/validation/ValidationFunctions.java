@@ -10,6 +10,13 @@ public final class ValidationFunctions {
         return o -> ((String) o).matches(regex);
     }
 
+    public static Function<Object, Boolean> forRange(int min, int max) {
+        return o -> {
+            Long n = ((Long) o);
+            return n >= min && n <= max;
+        };
+    }
+
     public static Function<Object, Boolean> forLength(int min, int max) {
         return o -> {
             int length = ((String) o).length();

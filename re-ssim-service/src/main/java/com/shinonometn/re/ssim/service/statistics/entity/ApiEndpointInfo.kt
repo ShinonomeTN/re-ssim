@@ -5,18 +5,18 @@ import java.io.Serializable
 import java.util.*
 
 @Document
-class ApiEndpointInfo: Serializable {
+class ApiEndpointInfo : Serializable {
 
-    var id : String? = null
+    var id: String? = null
 
-    var methodSignature : String = ""
+    var methodSignature: String = ""
     var urlSignature: String = ""
 
-    var requiresPermissions : MutableSet<String> = HashSet()
+    var requiresPermissions: MutableSet<String> = HashSet()
 
-    var title : String = ""
+    var title: String = ""
     var description: String = ""
 
-    var updateDate : Date? = null
+    var updateDate: Date? = null
 
 }

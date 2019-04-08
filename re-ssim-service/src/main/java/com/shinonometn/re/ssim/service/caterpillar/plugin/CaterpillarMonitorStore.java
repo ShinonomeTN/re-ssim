@@ -28,17 +28,21 @@ public class CaterpillarMonitorStore extends InMemoryStoreAdapter<Long> {
         store.increment(storeKey, KEY_CAPTURE_TASKS_COUNT, -1);
     }
 
-    public void increaseImportTaskCount(){
+    public void increaseImportTaskCount() {
         store.putIfAbsent(storeKey, KEY_IMPORT_TASK_COUNT, 0L);
         store.increment(storeKey, KEY_IMPORT_TASK_COUNT, 1);
     }
 
-    public void decreaseImportTaskCount(){
+    public void decreaseImportTaskCount() {
         store.increment(storeKey, KEY_CAPTURE_TASKS_COUNT, -1);
     }
 
     public Integer getImportTaskCount() {
-        return Math.toIntExact(store.get(storeKey, KEY_IMPORT_TASK_COUNT));
+        try {
+            return Math.toIntExact(store.get(storeKey, KEY_IMPORT_TASK_COUNT));
+        } catch (NullPointerException e) {
+            return 0;
+        }
     }
 
     public Map<String, Long> getAll() {
