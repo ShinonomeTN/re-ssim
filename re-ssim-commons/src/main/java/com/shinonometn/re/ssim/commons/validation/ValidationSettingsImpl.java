@@ -9,8 +9,14 @@ import java.util.stream.Collectors;
 public class ValidationSettingsImpl implements ValidationBuilder, ValidationMeta {
 
     private Stack<KeyValue<String, List<FieldValidator>>> meta = new Stack<>();
-
     private Map<String, List<FieldValidator>> validatorInfo;
+
+    /*
+    *
+    *
+    * ValidationBuilder
+    *
+    * */
 
     @Override
     public ValidationBuilder ofGroup(String groupName) {
@@ -65,6 +71,22 @@ public class ValidationSettingsImpl implements ValidationBuilder, ValidationMeta
     }
 
     /*
+    *
+    * ValidationMeta
+    *
+    * */
+
+    @Override
+    public Set<String> getGroup() {
+        return validatorInfo.keySet();
+    }
+
+    @Override
+    public List<FieldValidator> getFields(String group) {
+        return validatorInfo.getOrDefault(group, Collections.emptyList());
+    }
+
+    /*
      *
      * Private procedure
      *
@@ -77,15 +99,5 @@ public class ValidationSettingsImpl implements ValidationBuilder, ValidationMeta
 
     private KeyValue<String, List<FieldValidator>> latest() {
         return meta.peek();
-    }
-
-    @Override
-    public Set<String> getGroup() {
-        return validatorInfo.keySet();
-    }
-
-    @Override
-    public List<FieldValidator> getFields(String group) {
-        return validatorInfo.getOrDefault(group, Collections.emptyList());
     }
 }
