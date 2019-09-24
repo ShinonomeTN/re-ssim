@@ -1,16 +1,13 @@
-package com.shinonometn.re.ssim.service.caterpillar;
+package com.shinonometn.re.ssim.service.data;
 
 import com.shinonometn.re.ssim.commons.BusinessException;
 import com.shinonometn.re.ssim.commons.CacheKeys;
 import com.shinonometn.re.ssim.commons.file.fundation.FileContext;
 import com.shinonometn.re.ssim.service.bus.MessageBus;
-import com.shinonometn.re.ssim.service.caterpillar.commons.ImportTaskStatus;
+import com.shinonometn.re.ssim.service.caterpillar.CaterpillarFileManageService;
 import com.shinonometn.re.ssim.service.caterpillar.entity.CaptureTask;
-import com.shinonometn.re.ssim.service.caterpillar.entity.ImportTask;
 import com.shinonometn.re.ssim.service.caterpillar.plugin.CaterpillarMonitorStore;
 import com.shinonometn.re.ssim.service.caterpillar.repository.CaptureTaskRepository;
-import com.shinonometn.re.ssim.service.caterpillar.repository.ImportTaskRepository;
-import com.shinonometn.re.ssim.service.caterpillar.task.CourseDataImportTask;
 import com.shinonometn.re.ssim.service.courses.CourseInfoService;
 import org.apache.commons.io.FileUtils;
 import org.bson.Document;

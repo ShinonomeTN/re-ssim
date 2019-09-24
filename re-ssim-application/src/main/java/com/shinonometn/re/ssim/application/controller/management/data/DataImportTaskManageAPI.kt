@@ -3,9 +3,9 @@ package com.shinonometn.re.ssim.application.controller.management.data
 import com.shinonometn.re.ssim.application.configuration.preparation.endpoint.scanning.ApiDescription
 import com.shinonometn.re.ssim.commons.BusinessException
 import com.shinonometn.re.ssim.service.caterpillar.CaterpillarTaskService
-import com.shinonometn.re.ssim.service.caterpillar.ImportTaskService
+import com.shinonometn.re.ssim.service.data.ImportTaskService
 import com.shinonometn.re.ssim.service.caterpillar.entity.CaptureTask
-import com.shinonometn.re.ssim.service.caterpillar.entity.ImportTask
+import com.shinonometn.re.ssim.service.data.ImportTask
 import com.shiononometn.commons.web.RexModel
 import org.apache.shiro.authz.annotation.RequiresPermissions
 import org.springframework.data.domain.Page

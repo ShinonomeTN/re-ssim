@@ -1,4 +1,4 @@
-package com.shinonometn.re.ssim.service.courses.entity
+package com.shinonometn.re.ssim.service.terms
 
 import java.io.Serializable
 

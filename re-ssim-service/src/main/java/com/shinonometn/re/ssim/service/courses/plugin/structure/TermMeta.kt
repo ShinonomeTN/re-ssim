@@ -1,7 +1,7 @@
 package com.shinonometn.re.ssim.service.courses.plugin.structure
 
 import com.fasterxml.jackson.annotation.JsonInclude
-import com.shinonometn.re.ssim.service.courses.entity.TermInfoEntity
+import com.shinonometn.re.ssim.service.terms.TermInfoEntity
 import org.springframework.beans.BeanUtils
 
 @JsonInclude(JsonInclude.Include.NON_NULL)

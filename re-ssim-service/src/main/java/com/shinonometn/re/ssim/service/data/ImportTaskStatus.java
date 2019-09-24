@@ -1,4 +1,4 @@
-package com.shinonometn.re.ssim.service.caterpillar.commons;
+package com.shinonometn.re.ssim.service.data;
 
 public enum  ImportTaskStatus {
     NONE, IMPORTING, FINISHED, ERROR

@@ -1,6 +1,5 @@
-package com.shinonometn.re.ssim.service.courses.repository
+package com.shinonometn.re.ssim.service.calendar
 
-import com.shinonometn.re.ssim.service.courses.entity.SchoolCalendarEntity
 import org.springframework.data.mongodb.repository.MongoRepository
 import java.util.*
 

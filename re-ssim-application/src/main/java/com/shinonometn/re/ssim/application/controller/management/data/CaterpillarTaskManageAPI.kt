@@ -6,7 +6,7 @@ import com.shinonometn.re.ssim.commons.BusinessException
 import com.shinonometn.re.ssim.service.caterpillar.CaterpillarDataService
 import com.shinonometn.re.ssim.service.caterpillar.CaterpillarFileManageService
 import com.shinonometn.re.ssim.service.caterpillar.CaterpillarTaskService
-import com.shinonometn.re.ssim.service.caterpillar.ImportTaskService
+import com.shinonometn.re.ssim.service.data.ImportTaskService
 import com.shinonometn.re.ssim.service.caterpillar.entity.CaptureTask
 import com.shinonometn.re.ssim.service.caterpillar.entity.CaptureTaskDetails
 import com.shiononometn.commons.web.RexModel

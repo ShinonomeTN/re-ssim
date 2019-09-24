@@ -1,13 +1,10 @@
-package com.shinonometn.re.ssim.service.caterpillar.task
+package com.shinonometn.re.ssim.service.data
 
 import com.shinonometn.re.ssim.commons.BusinessException
 import com.shinonometn.re.ssim.commons.JSON
 import com.shinonometn.re.ssim.commons.file.fundation.FileContext
 import com.shinonometn.re.ssim.service.bus.Message
 import com.shinonometn.re.ssim.service.bus.MessageBus
-import com.shinonometn.re.ssim.service.caterpillar.ImportTaskService
-import com.shinonometn.re.ssim.service.caterpillar.commons.ImportTaskStatus
-import com.shinonometn.re.ssim.service.caterpillar.entity.ImportTask
 import com.shinonometn.re.ssim.service.caterpillar.plugin.CaterpillarMonitorStore
 import com.shinonometn.re.ssim.service.courses.CourseInfoService
 import com.shinonometn.re.ssim.service.courses.entity.CourseEntity

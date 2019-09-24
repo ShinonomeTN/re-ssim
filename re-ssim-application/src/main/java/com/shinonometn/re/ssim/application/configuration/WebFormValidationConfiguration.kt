@@ -6,7 +6,7 @@ import com.shinonometn.re.ssim.commons.validation.ValidationFunctions
 import com.shinonometn.re.ssim.commons.validation.ValidationMeta
 import com.shinonometn.re.ssim.commons.validation.Validator
 import com.shinonometn.re.ssim.service.caterpillar.entity.CaterpillarSetting
-import com.shinonometn.re.ssim.service.courses.entity.SchoolCalendarEntity
+import com.shinonometn.re.ssim.service.calendar.SchoolCalendarEntity
 import com.shinonometn.re.ssim.service.user.entity.User
 import org.intellij.lang.annotations.Language
 import org.springframework.context.annotation.Bean

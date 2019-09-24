@@ -1,9 +1,9 @@
 package com.shinonometn.re.ssim.application.configuration.preparation
 
-import com.shinonometn.re.ssim.service.caterpillar.ImportTaskService
+import com.shinonometn.re.ssim.service.data.ImportTaskService
 import com.shinonometn.re.ssim.service.courses.CourseInfoService
-import com.shinonometn.re.ssim.service.courses.SchoolTermInfoService
-import com.shinonometn.re.ssim.service.courses.entity.TermInfoEntity
+import com.shinonometn.re.ssim.service.terms.SchoolTermInfoService
+import com.shinonometn.re.ssim.service.terms.TermInfoEntity
 import com.shinonometn.re.ssim.service.courses.plugin.CourseTermListStore
 import com.shinonometn.re.ssim.service.courses.plugin.structure.TermMeta
 import org.slf4j.LoggerFactory

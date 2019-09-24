@@ -1,4 +1,4 @@
-package com.shinonometn.re.ssim.service.courses.entity
+package com.shinonometn.re.ssim.service.calendar
 
 import com.shinonometn.re.ssim.service.caterpillar.common.SchoolCalendar
 import org.springframework.data.annotation.Id

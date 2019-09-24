@@ -1,13 +1,10 @@
-package com.shinonometn.re.ssim.service.courses;
+package com.shinonometn.re.ssim.service.calendar;
 
 import com.shinonometn.re.ssim.commons.BusinessException;
 import com.shinonometn.re.ssim.service.caterpillar.common.SchoolCalendar;
 import com.shinonometn.re.ssim.service.caterpillar.kingo.KingoSchoolCalendar;
 import com.shinonometn.re.ssim.service.caterpillar.kingo.capture.CalendarPageProcessor;
-import com.shinonometn.re.ssim.service.courses.entity.SchoolCalendarEntity;
-import com.shinonometn.re.ssim.service.courses.entity.TermInfoEntity;
-import com.shinonometn.re.ssim.service.courses.plugin.SchoolCalendarStore;
-import com.shinonometn.re.ssim.service.courses.repository.SchoolCalendarEntityRepository;
+import com.shinonometn.re.ssim.service.terms.TermInfoEntity;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;

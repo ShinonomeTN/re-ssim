@@ -3,10 +3,10 @@ package com.shinonometn.re.ssim.application.controller.management.data
 import com.shinonometn.re.ssim.application.configuration.preparation.endpoint.scanning.ApiDescription
 import com.shinonometn.re.ssim.commons.BusinessException
 import com.shinonometn.re.ssim.commons.validation.Validator
-import com.shinonometn.re.ssim.service.courses.SchoolCalendarService
-import com.shinonometn.re.ssim.service.courses.SchoolTermInfoService
-import com.shinonometn.re.ssim.service.courses.entity.SchoolCalendarEntity
-import com.shinonometn.re.ssim.service.courses.entity.TermInfo
+import com.shinonometn.re.ssim.service.calendar.SchoolCalendarService
+import com.shinonometn.re.ssim.service.terms.SchoolTermInfoService
+import com.shinonometn.re.ssim.service.calendar.SchoolCalendarEntity
+import com.shinonometn.re.ssim.service.terms.TermInfo
 import com.shinonometn.re.ssim.service.courses.plugin.CourseTermListStore
 import com.shiononometn.commons.web.RexModel
 import org.apache.shiro.authz.annotation.RequiresPermissions

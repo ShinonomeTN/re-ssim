@@ -1,4 +1,4 @@
-package com.shinonometn.re.ssim.service.courses.plugin;
+package com.shinonometn.re.ssim.service.calendar;
 
 import com.shinonometn.re.ssim.service.caterpillar.common.SchoolDate;
 import com.shinonometn.re.ssim.service.commons.InMemoryStoreAdapter;

@@ -1,11 +1,11 @@
 package com.shinonometn.re.ssim.service.courses;
 
 import com.mongodb.client.result.DeleteResult;
-import com.mongodb.connection.QueryResult;
 import com.shinonometn.re.ssim.commons.CacheKeys;
 import com.shinonometn.re.ssim.service.courses.entity.CourseEntity;
 import com.shinonometn.re.ssim.service.courses.plugin.CourseTermListStore;
 import com.shinonometn.re.ssim.service.courses.repository.CourseRepository;
+import com.shinonometn.re.ssim.service.terms.SchoolTermInfoService;
 import org.apache.commons.lang3.Range;
 import org.bson.Document;
 import org.jetbrains.annotations.NotNull;

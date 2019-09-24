@@ -1,6 +1,5 @@
-package com.shinonometn.re.ssim.service.courses.repository;
+package com.shinonometn.re.ssim.service.terms;
 
-import com.shinonometn.re.ssim.service.courses.entity.TermInfoEntity;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.Optional;

@@ -1,4 +1,4 @@
-package com.shinonometn.re.ssim.service.courses.entity
+package com.shinonometn.re.ssim.service.terms
 
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document

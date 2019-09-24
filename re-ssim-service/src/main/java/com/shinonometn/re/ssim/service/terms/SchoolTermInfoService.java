@@ -1,19 +1,16 @@
-package com.shinonometn.re.ssim.service.courses;
+package com.shinonometn.re.ssim.service.terms;
 
-import com.shinonometn.re.ssim.commons.BusinessException;
 import com.shinonometn.re.ssim.commons.KeyValue;
 import com.shinonometn.re.ssim.service.bus.Listener;
 import com.shinonometn.re.ssim.service.bus.MessageBus;
 import com.shinonometn.re.ssim.service.caterpillar.entity.CaterpillarSetting;
-import com.shinonometn.re.ssim.service.caterpillar.entity.ImportTask;
+import com.shinonometn.re.ssim.service.data.ImportTask;
 import com.shinonometn.re.ssim.service.caterpillar.kingo.KingoUrls;
 import com.shinonometn.re.ssim.service.caterpillar.kingo.capture.CalendarListPageProcessor;
 import com.shinonometn.re.ssim.service.caterpillar.kingo.capture.TermListPageProcessor;
 import com.shinonometn.re.ssim.service.courses.entity.CourseEntity;
-import com.shinonometn.re.ssim.service.courses.entity.TermInfoEntity;
 import com.shinonometn.re.ssim.service.courses.plugin.CourseTermListStore;
 import com.shinonometn.re.ssim.service.courses.plugin.structure.TermMeta;
-import com.shinonometn.re.ssim.service.courses.repository.TermInfoRepository;
 import org.bson.Document;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

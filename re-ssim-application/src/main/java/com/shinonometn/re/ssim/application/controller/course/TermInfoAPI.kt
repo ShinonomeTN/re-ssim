@@ -2,9 +2,9 @@ package com.shinonometn.re.ssim.application.controller.course
 
 import com.shinonometn.re.ssim.commons.CacheKeys
 import com.shinonometn.re.ssim.service.courses.CourseInfoService
-import com.shinonometn.re.ssim.service.courses.SchoolTermInfoService
+import com.shinonometn.re.ssim.service.terms.SchoolTermInfoService
 import com.shinonometn.re.ssim.service.courses.plugin.CourseTermListStore
-import com.shinonometn.re.ssim.service.courses.plugin.SchoolCalendarStore
+import com.shinonometn.re.ssim.service.calendar.SchoolCalendarStore
 import com.shinonometn.re.ssim.service.courses.plugin.structure.TermMeta
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.web.bind.annotation.GetMapping
