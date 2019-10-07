@@ -35,3 +35,6 @@ caterpillar_settings.properties
 
 ### Temp folder ###
 _temp/
+
+# local application settings
+/application.yml

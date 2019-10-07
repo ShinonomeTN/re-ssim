@@ -1,5 +1,8 @@
-package com.shinonometn.re.ssim.service.caterpillar.commons
+package com.shinonometn.re.ssim.caterpillar.application.commons
 
 enum class CaptureTaskStage {
-    NONE, INITIALIZE, CAPTURE, STOPPED
+    NONE,
+    INITIALIZE,
+    CAPTURE,
+    STOPPED
 }

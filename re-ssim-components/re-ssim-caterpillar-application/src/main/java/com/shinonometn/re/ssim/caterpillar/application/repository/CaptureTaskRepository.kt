@@ -1,8 +1,8 @@
-package com.shinonometn.re.ssim.service.caterpillar.repository
+package com.shinonometn.re.ssim.caterpillar.application.repository
 
-import com.shinonometn.re.ssim.service.caterpillar.entity.CaptureTask
+import com.shinonometn.re.ssim.caterpillar.application.entity.CaptureTask
 import org.springframework.data.mongodb.repository.MongoRepository
+import org.springframework.stereotype.Repository
 
-interface CaptureTaskRepository : MongoRepository<CaptureTask, String> {
-
-}
+@Repository
+interface CaptureTaskRepository : MongoRepository<CaptureTask, String>

@@ -14,12 +14,11 @@ import static org.junit.Assert.assertEquals;
 
 public class SchoolCalendarTest {
 
-    private String term = "2017-2018学年第一学期";
-    private Date startDate = Date.from(LocalDate.of(2017, 9, 4).atStartOfDay().atZone(ZoneId.systemDefault()).toInstant());
-    private Date endDate = Date.from(LocalDate.of(2018, 1, 5).atTime(LocalTime.MAX).atZone(ZoneId.systemDefault()).toInstant());
-
     @Test
     public void testGetWeekAndDay() {
+        String term = "2017-2018学年第一学期";
+        Date startDate = Date.from(LocalDate.of(2017, 9, 4).atStartOfDay().atZone(ZoneId.systemDefault()).toInstant());
+        Date endDate = Date.from(LocalDate.of(2018, 1, 5).atTime(LocalTime.MAX).atZone(ZoneId.systemDefault()).toInstant());
         KingoSchoolCalendar schoolCalendar = new KingoSchoolCalendar(term, startDate, endDate);
 
         Map<LocalDateTime, SchoolDate> testCases = new HashMap<>();
@@ -31,6 +30,7 @@ public class SchoolCalendarTest {
         testCases.put(LocalDateTime.of(2018, 1, 5, 18, 31), new SchoolDate(term, 18, DayOfWeek.FRIDAY));
         testCases.put(LocalDateTime.of(2018, 1, 6, 0, 0), null);
 
+
         testCases.forEach((k, v) -> {
             SchoolDate schoolDate = schoolCalendar.getFromDateTime(k);
 
@@ -41,6 +41,8 @@ public class SchoolCalendarTest {
 
     @Test
     public void testWeekDayShift() {
+        String term = "2017-2018学年第一学期";
+        Date endDate = Date.from(LocalDate.of(2018, 1, 5).atTime(LocalTime.MAX).atZone(ZoneId.systemDefault()).toInstant());
         Date startDate = Date.from(LocalDate.of(2017, 9, 7).atStartOfDay().atZone(ZoneId.systemDefault()).toInstant());
 
         KingoSchoolCalendar schoolCalendar = new KingoSchoolCalendar(term, startDate, endDate);
@@ -53,6 +55,10 @@ public class SchoolCalendarTest {
 
     @Test
     public void getDaysOfTerm() {
+        String term = "2017-2018学年第一学期";
+        Date startDate = Date.from(LocalDate.of(2017, 9, 4).atStartOfDay().atZone(ZoneId.systemDefault()).toInstant());
+        Date endDate = Date.from(LocalDate.of(2018, 1, 5).atTime(LocalTime.MAX).atZone(ZoneId.systemDefault()).toInstant());
+
         KingoSchoolCalendar schoolCalendar = new KingoSchoolCalendar(term, startDate, endDate);
 
         int days = schoolCalendar.getDaysOfTerm();

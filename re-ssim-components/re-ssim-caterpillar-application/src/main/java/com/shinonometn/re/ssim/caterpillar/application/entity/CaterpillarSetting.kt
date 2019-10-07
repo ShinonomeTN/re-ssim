@@ -1,4 +1,4 @@
-package com.shinonometn.re.ssim.service.caterpillar.entity
+package com.shinonometn.re.ssim.caterpillar.application.entity
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
