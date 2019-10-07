@@ -12,6 +12,7 @@
     <modules>
         <module>re-ssim-discover</module>
         <module>re-ssim-caterpillar-application</module>
+        <module>re-ssim-data-manager-application</module>
     </modules>
 
     <properties>

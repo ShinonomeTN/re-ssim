@@ -21,9 +21,9 @@ class SpiderMonitor {
 
     private val spiderStatus = HashMap<String, SpiderStatus>()
 
-    fun getSpiderStatus(): Map<String, SpiderStatus> {
-        return spiderStatus
-    }
+    fun getSpiderStatus(): Map<String, SpiderStatus> = spiderStatus
+
+    fun removeSpiderStatusMonitor(id: String) = spiderStatus.remove(id)
 
     @Synchronized
     fun register(vararg spiders: Spider): SpiderMonitor {

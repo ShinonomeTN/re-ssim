@@ -177,7 +177,7 @@ class CaterpillarService(private val fileManageService: CaterpillarFileManageSer
 
         val captureTaskDetails = captureTaskRepository
                 .findById(taskId)
-                .map<CaptureTaskDetails>(Function<CaptureTask, CaptureTaskDetails> { this.getTaskDetails(it) })
+                .map { this.getTaskDetails(it) }
                 .orElseThrow { BusinessException("task_not_exists") }
 
         if (captureTaskDetails.runningTaskStatus != null) throw BusinessException("task_thread_exists")
@@ -214,7 +214,7 @@ class CaterpillarService(private val fileManageService: CaterpillarFileManageSer
                 spider.startRequest(fetchTermCourseList(site, captureTaskDetails.taskInfo.termCode)
                         .stream()
                         .map { id -> createSubjectRequest(site, captureTaskDetails.taskInfo.termCode, id) }
-                        .collect<List<Request>, Any>(Collectors.toList()))
+                        .collect(Collectors.toList()))
 
                 spiderMonitor.register(spider)
 
@@ -252,10 +252,10 @@ class CaterpillarService(private val fileManageService: CaterpillarFileManageSer
         if (spiderStatusMap.containsKey(id)) {
 
             val spiderStatus = spiderStatusMap[id]
-            if (spiderStatus.status == Spider.Status.Running.name)
+            if (Spider.Status.Running.name == spiderStatus?.status)
                 throw BusinessException("spider_running")
 
-            spiderStatusMap.remove(id)
+            spiderMonitor.removeSpiderStatusMonitor(id)
         }
 
         captureTaskRepository.deleteById(id)
@@ -278,7 +278,7 @@ class CaterpillarService(private val fileManageService: CaterpillarFileManageSer
      * @return dto
      */
     fun queryTask(id: String): CaptureTaskDetails? {
-        return captureTaskRepository.findById(id).map<CaptureTaskDetails>(Function<CaptureTask, CaptureTaskDetails> { this.getTaskDetails(it) }).orElse(null)
+        return captureTaskRepository.findById(id).map { this.getTaskDetails(it) }.orElse(null)
     }
 
     /*
@@ -311,7 +311,7 @@ class CaterpillarService(private val fileManageService: CaterpillarFileManageSer
         val file = File("./_temp/$taskId")
         if (!file.exists()) if (!file.mkdirs()) throw IllegalStateException("create_temp_folder_failed")
         val files = file.listFiles()
-        if (files != null) Stream.of(*files).forEach(Consumer<File> { it.delete() })
+        if (files != null) Stream.of(*files).forEach { it.delete() }
         return file
     }
 
@@ -363,7 +363,7 @@ class CaterpillarService(private val fileManageService: CaterpillarFileManageSer
         val form = HashMap<String, Any>()
         form["gs"] = "2"
         form["txt_yzm"] = ""
-        form["Sel_XNXQ"] = termCode
+        form["Sel_XNXQ"] = termCode ?: ""
         form["Sel_KC"] = subjectCode
 
         val request = Request(KingoUrls.subjectQueryPage)
