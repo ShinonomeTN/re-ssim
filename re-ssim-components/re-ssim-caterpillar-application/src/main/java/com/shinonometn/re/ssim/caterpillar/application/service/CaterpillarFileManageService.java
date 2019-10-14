@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 import java.io.File;
 
 @Service
-public class CaterpillarFileManageService extends FileServiceAdapter<String> {
+public class CaterpillarFileManageService extends FileServiceAdapter<Integer> {
     public CaterpillarFileManageService(File rootFolder) {
         super(rootFolder, "caterpillar");
     }

@@ -1,15 +1,21 @@
 package com.shinonometn.re.ssim.caterpillar.application.service
 
 import com.shinonometn.re.ssim.caterpillar.application.commons.CaptureTaskStage
+import com.shinonometn.re.ssim.caterpillar.application.commons.TermItem
+import com.shinonometn.re.ssim.caterpillar.application.commons.agent.CaterpillarProfileAgent
+import com.shinonometn.re.ssim.caterpillar.application.commons.agent.impl.KingoCaterpillarProfileAgent
+import com.shinonometn.re.ssim.caterpillar.application.dto.CaptureTaskDetails
 import com.shinonometn.re.ssim.caterpillar.application.entity.CaptureTask
-import com.shinonometn.re.ssim.caterpillar.application.entity.CaptureTaskDetails
 import com.shinonometn.re.ssim.caterpillar.application.entity.CaterpillarSetting
 import com.shinonometn.re.ssim.caterpillar.application.repository.CaptureTaskRepository
 import com.shinonometn.re.ssim.commons.BusinessException
 import com.shinonometn.re.ssim.commons.JSON
 import com.shinonometn.re.ssim.service.caterpillar.SpiderMonitor
 import com.shinonometn.re.ssim.service.caterpillar.kingo.KingoUrls
-import com.shinonometn.re.ssim.service.caterpillar.kingo.capture.*
+import com.shinonometn.re.ssim.service.caterpillar.kingo.capture.CourseDetailsPageProcessor
+import com.shinonometn.re.ssim.service.caterpillar.kingo.capture.CoursesListPageProcessor
+import com.shinonometn.re.ssim.service.caterpillar.kingo.capture.LoginExecutePageProcessor
+import com.shinonometn.re.ssim.service.caterpillar.kingo.capture.LoginPreparePageProcessor
 import org.slf4j.LoggerFactory
 import org.springframework.core.task.TaskExecutor
 import org.springframework.data.domain.Page
@@ -35,20 +41,22 @@ class CaterpillarService(private val fileManageService: CaterpillarFileManageSer
 
     private val logger = LoggerFactory.getLogger(CaterpillarService::class.java)
 
+    // TODO Use Factory Method
+    private fun requireAgentByProfile(caterpillarSetting: CaterpillarSetting): CaterpillarProfileAgent {
+
+        if (caterpillarSetting.caterpillarProfile == null) throw BusinessException("caterpillar_profile_empty")
+
+        return KingoCaterpillarProfileAgent(caterpillarSetting.caterpillarProfile!!)
+    }
+
+    // TODO Use external cache
+    private var cachedTermItemList: Collection<TermItem> = Collections.emptyList<>()
+
     /*
 
         Status
 
     */
-
-    //    /**
-    //     * Get importing task count
-    //     *
-    //     * @return int
-    //     */
-    //    public Integer getImportingTaskCount() {
-    //        return caterpillarMonitorStore.getImportTaskCount();
-    //    }
 
     /**
      * Get running spider counts
@@ -64,26 +72,6 @@ class CaterpillarService(private val fileManageService: CaterpillarFileManageSer
 
 
     /**
-     * Get all school terms
-     *
-     *
-     * if cache not found, load from remote and cache it
-     *
-     * @return a map, term code as key, term name as value
-     */
-    fun captureTermListFromRemote(): Map<String, String> {
-
-        val capturedResult = HashMap<String, String>()
-
-        Spider.create(TermListPageProcessor(CaterpillarSetting.createDefaultSite()))
-                .addUrl(KingoUrls.classInfoQueryPage)
-                .addPipeline { r, _ -> capturedResult.putAll(TermListPageProcessor.getTerms(r)) }
-                .run()
-
-        return capturedResult
-    }
-
-    /**
      * Get all tasks
      *
      * @return task list
@@ -91,6 +79,21 @@ class CaterpillarService(private val fileManageService: CaterpillarFileManageSer
     fun listAllTasks(pageable: Pageable): Page<CaptureTaskDetails> {
         return captureTaskRepository.findAll(pageable).map { this.getTaskDetails(it) }
     }
+
+    /**
+     * Get all school terms
+     *
+     *
+     * if cache not found, load from remote and cache it
+     *
+     * @return a map, term code as key, term name as value
+     */
+    fun captureTermListFromRemote(caterpillarSetting: CaterpillarSetting): Collection<TermItem> {
+        this.cachedTermItemList = requireAgentByProfile(caterpillarSetting).fetchTerms()
+        return cachedTermItemList;
+    }
+
+    fun cachedTermItemList() = this.cachedTermItemList
 
     /*
      *
@@ -112,8 +115,12 @@ class CaterpillarService(private val fileManageService: CaterpillarFileManageSer
         val captureTask = CaptureTask()
 
         captureTask.createDate = Date()
+
         captureTask.termCode = termCode
-        captureTask.termName = captureTermListFromRemote()[termCode]
+
+        // TODO Use external method
+        captureTask.termName = cachedTermItemList
+                .find { it.title == termCode }?.title ?: throw BusinessException("term_not_exists")
 
         captureTask.stage = CaptureTaskStage.NONE
         captureTask.stageReport = "task_created"
@@ -127,10 +134,10 @@ class CaterpillarService(private val fileManageService: CaterpillarFileManageSer
      * @param taskId task id
      * @return task dto
      */
-    fun stopTaskById(taskId: String): CaptureTaskDetails? {
+    fun stopTaskById(taskId: Int): CaptureTaskDetails? {
         val captureTask = captureTaskRepository.findById(taskId).orElse(null) ?: return null
 
-        val spiderStatus = spiderMonitor.getSpiderStatus()[taskId]
+        val spiderStatus = spiderMonitor.getSpiderStatus()[taskId.toString()]
                 ?: throw BusinessException("task_have_not_initialized")
         spiderStatus.stop()
 
@@ -148,7 +155,7 @@ class CaterpillarService(private val fileManageService: CaterpillarFileManageSer
      * @param taskId task id
      * @return dto
      */
-    fun resumeTaskById(taskId: String): CaptureTaskDetails? {
+    fun resumeTaskById(taskId: Int): CaptureTaskDetails? {
         val captureTaskDetails = captureTaskRepository
                 .findById(taskId)
                 .map { this.getTaskDetails(it) }
@@ -173,7 +180,7 @@ class CaterpillarService(private val fileManageService: CaterpillarFileManageSer
      * @param taskId task id
      * @return dto
      */
-    fun startByTaskIdAndSettings(taskId: String, caterpillarSetting: CaterpillarSetting): CaptureTaskDetails {
+    fun startByTaskIdAndSettings(taskId: Int, caterpillarSetting: CaterpillarSetting): CaptureTaskDetails {
 
         val captureTaskDetails = captureTaskRepository
                 .findById(taskId)
@@ -184,6 +191,7 @@ class CaterpillarService(private val fileManageService: CaterpillarFileManageSer
 
         val captureTask = captureTaskDetails.taskInfo
 
+        // TODO Refactoring this using RxJava
         changeCaptureTaskStatus(captureTask, CaptureTaskStage.INITIALIZE, "task_initialing")
         emitTaskCreateMessage()
 
@@ -208,7 +216,7 @@ class CaterpillarService(private val fileManageService: CaterpillarFileManageSer
                                 throw RuntimeException(e)
                             }
                         }
-                        .setUUID(taskId)
+                        .setUUID(taskId.toString())
                         .thread(caterpillarSetting.threads)
 
                 spider.startRequest(fetchTermCourseList(site, captureTaskDetails.taskInfo.termCode)
@@ -246,16 +254,16 @@ class CaterpillarService(private val fileManageService: CaterpillarFileManageSer
      *
      * @param id task id
      */
-    fun delete(id: String) {
+    fun delete(id: Int) {
         val spiderStatusMap = spiderMonitor.getSpiderStatus()
 
-        if (spiderStatusMap.containsKey(id)) {
+        if (spiderStatusMap.containsKey(id.toString())) {
 
-            val spiderStatus = spiderStatusMap[id]
+            val spiderStatus = spiderStatusMap[id.toString()]
             if (Spider.Status.Running.name == spiderStatus?.status)
                 throw BusinessException("spider_running")
 
-            spiderMonitor.removeSpiderStatusMonitor(id)
+            spiderMonitor.removeSpiderStatusMonitor(id.toString())
         }
 
         captureTaskRepository.deleteById(id)
@@ -277,7 +285,7 @@ class CaterpillarService(private val fileManageService: CaterpillarFileManageSer
      * @param id id
      * @return dto
      */
-    fun queryTask(id: String): CaptureTaskDetails? {
+    fun queryTask(id: Int): CaptureTaskDetails? {
         return captureTaskRepository.findById(id).map { this.getTaskDetails(it) }.orElse(null)
     }
 
@@ -287,10 +295,12 @@ class CaterpillarService(private val fileManageService: CaterpillarFileManageSer
 
      */
 
+    // TODO Put spider business into ProfileAgents
+
     private fun getTaskDetails(captureTask: CaptureTask): CaptureTaskDetails {
         val captureTaskDetails = CaptureTaskDetails()
         captureTaskDetails.taskInfo = captureTask
-        captureTaskDetails.runningTaskStatus = spiderMonitor.getSpiderStatus()[captureTask.id]
+        captureTaskDetails.runningTaskStatus = spiderMonitor.getSpiderStatus()[captureTask.id.toString()]
         return captureTaskDetails
     }
 
@@ -307,8 +317,8 @@ class CaterpillarService(private val fileManageService: CaterpillarFileManageSer
         return termList.keys
     }
 
-    private fun getTempDir(taskId: String): File {
-        val file = File("./_temp/$taskId")
+    private fun requireTempFolder(taskId: Int): File {
+        val file = File(fileManageService.contextOf(taskId).file, "/capturing")
         if (!file.exists()) if (!file.mkdirs()) throw IllegalStateException("create_temp_folder_failed")
         val files = file.listFiles()
         if (files != null) Stream.of(*files).forEach { it.delete() }

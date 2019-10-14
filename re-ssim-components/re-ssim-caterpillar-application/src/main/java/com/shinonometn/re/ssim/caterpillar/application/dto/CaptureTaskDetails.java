@@ -1,6 +1,7 @@
-package com.shinonometn.re.ssim.caterpillar.application.entity;
+package com.shinonometn.re.ssim.caterpillar.application.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.shinonometn.re.ssim.caterpillar.application.entity.CaptureTask;
 import com.shinonometn.re.ssim.service.caterpillar.SpiderStatus;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)

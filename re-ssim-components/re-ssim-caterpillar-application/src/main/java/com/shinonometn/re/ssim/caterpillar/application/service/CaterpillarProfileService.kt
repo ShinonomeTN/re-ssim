@@ -12,8 +12,8 @@ class CaterpillarProfileService(private val caterpillarSettingRepository: Caterp
     fun findProfile(username: String, name: String): Optional<CaterpillarSetting>
             = caterpillarSettingRepository.findByOwnerAndName(username, name)
 
-    fun save(caterpillarSetting: CaterpillarSetting)
-            = caterpillarSettingRepository.save(caterpillarSetting)
+    fun save(caterpillarSetting: CaterpillarSetting): CaterpillarSetting =
+            caterpillarSettingRepository.save(caterpillarSetting)
 
     fun findAll(pageable: Pageable): Page<CaterpillarSetting>
             = caterpillarSettingRepository.findAll(pageable)
@@ -21,6 +21,6 @@ class CaterpillarProfileService(private val caterpillarSettingRepository: Caterp
     fun findAllByUser(username: String, pageable: Pageable): Page<CaterpillarSetting>
             = caterpillarSettingRepository.findAllByOwner(username, pageable)
 
-    fun findById(id: String): Optional<CaterpillarSetting>
+    fun findById(id: Int): Optional<CaterpillarSetting>
             = caterpillarSettingRepository.findById(id)
 }
