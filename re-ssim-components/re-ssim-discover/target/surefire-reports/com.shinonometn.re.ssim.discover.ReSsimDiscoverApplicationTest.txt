@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: com.shinonometn.re.ssim.discover.ReSsimDiscoverApplicationTest
--------------------------------------------------------------------------------
-Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 11.272 s - in com.shinonometn.re.ssim.discover.ReSsimDiscoverApplicationTest

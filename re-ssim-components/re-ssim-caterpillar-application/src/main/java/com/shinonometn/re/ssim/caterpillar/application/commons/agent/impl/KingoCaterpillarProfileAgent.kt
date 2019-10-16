@@ -33,7 +33,7 @@ data class KingoCaterpillarProfileAgent(private val map: MutableMap<String, Any?
 
     var username: String? by map
     var password: String? by map
-    var role: String? by map
+    var role: String by map.withDefault { "STU" }
 
     var encoding: String by map.withDefault { "utf8" }
 

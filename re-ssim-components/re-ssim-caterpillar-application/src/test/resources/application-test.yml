@@ -1,4 +1,7 @@
 spring:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
   datasource:
     url: jdbc:mysql:///db_ressim_caterpillar_test
 
@@ -6,3 +9,5 @@ spring:
 application:
   data:
     path: ./data
+
+debug: false

@@ -10,6 +10,7 @@ spring:
     username: app_ressim
     password: 123456
 
+
 application:
   data:
     path: ./data
@@ -19,3 +20,8 @@ logging:
     root: info
     caterpillar_profile_agent.*: debug
     caterpillar_service: trace
+
+debug: false
+
+server:
+  port: 8081

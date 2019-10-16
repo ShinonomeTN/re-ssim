@@ -1,12 +1,13 @@
 package com.shinonometn.re.ssim.commons.validation;
 
+import com.shinonometn.re.ssim.commons.validation.exception.ValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
-import java.util.List;
+import java.util.*;
 
 import static java.util.stream.Collectors.toMap;
 
@@ -53,17 +54,22 @@ public class Validator {
     public void validate(String group, Object form) {
         List<FieldValidator> validators = validationMeta.getFields(group);
         if (validators == null) {
-            logger.info("Field validators for {} not registered, validation skipped.", group);
+            logger.info("Field validator for {} not registered, skipped.", group);
             return;
         }
 
-        ValidateResult result = new ValidateResult(validators
-                .stream()
-                .filter(validator -> !validator.validate(form))
-                .collect(toMap(
-                        FieldValidator::getField,
-                        FieldValidator::getMessage
-                )));
+        Map<String, Collection<String>> map = new HashMap<>();
+        for (FieldValidator validator : validators) {
+            String fieldName = validator.getField();
+            if (!validator.validate(form)) {
+                if (!map.containsKey(fieldName))
+                    map.put(fieldName, new HashSet<>());
+
+                map.get(fieldName).add(validator.getMessage());
+            }
+        }
+
+        ValidateResult result = new ValidateResult(map);
 
         if (result.hasError()) throw new ValidationException(result);
     }

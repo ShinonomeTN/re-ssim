@@ -30,7 +30,7 @@ open class CaterpillarService(private val fileManageService: CaterpillarFileMana
     private val logger = LoggerFactory.getLogger("caterpillar_service")
 
     // TODO Use Factory Method
-    private fun requireAgentByProfile(caterpillarSetting: CaterpillarSetting): CaterpillarProfileAgent {
+    fun requireAgentByProfile(caterpillarSetting: CaterpillarSetting): CaterpillarProfileAgent {
 
         if (caterpillarSetting.caterpillarProfile == null) throw BusinessException("caterpillar_profile_empty")
 

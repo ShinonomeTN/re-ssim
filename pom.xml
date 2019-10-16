@@ -9,8 +9,8 @@
     <modules>
         <module>re-ssim-commons</module>
         <module>re-ssim-caterpillar</module>
-        <module>re-ssim-service</module>
-        <module>re-ssim-application</module>
+        <!--<module>re-ssim-service</module>-->
+        <!--<module>re-ssim-application</module>-->
         <module>re-ssim-components</module>
     </modules>
     <packaging>pom</packaging>
@@ -130,6 +130,7 @@
                     <execution>
                         <id>compile</id>
                         <phase>process-sources</phase>
+                        <!--<phase>compile</phase>-->
                         <goals>
                             <goal>compile</goal>
                         </goals>

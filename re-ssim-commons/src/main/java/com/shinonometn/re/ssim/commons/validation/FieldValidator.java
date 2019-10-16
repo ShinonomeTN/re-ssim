@@ -11,7 +11,7 @@ public class FieldValidator {
     private final static Logger logger = LoggerFactory.getLogger("com.shinonometn.web.validator");
 
     private String field;
-    private String message = "field_failed";
+    private String message;
     private Function<Object, Boolean> logic;
     private PropertyDescriptor propertyDescriptor;
 
@@ -21,6 +21,15 @@ public class FieldValidator {
     public FieldValidator(String field, Function<Object, Boolean> logic) {
         this.field = field;
         this.logic = logic;
+
+        message = "failed";
+    }
+
+    public FieldValidator(String field, Function<Object, Boolean> logic, String message) {
+        this.field = field;
+        this.logic = logic;
+
+        this.message = message;
     }
 
     public String getField() {
@@ -50,13 +59,18 @@ public class FieldValidator {
     @SuppressWarnings("ConfusingArgumentToVarargsMethod")
     public boolean validate(Object o) {
         try {
+
+            Object value;
+
             if (propertyDescriptor == null) {
-                logic.apply(new PropertyDescriptor(field, o.getClass()).getReadMethod().invoke(o, null));
+                value = new PropertyDescriptor(field, o.getClass()).getReadMethod().invoke(o, null);
+            } else {
+                value = propertyDescriptor.getReadMethod().invoke(o, null);
             }
 
-            return logic.apply(propertyDescriptor.getReadMethod().invoke(o, null));
+            return logic.apply(value);
         } catch (Exception e) {
-            logger.info("Field validation for {} failed, skip, reason {}", field, e);
+            logger.info("Field validation for {} failed, skip", field, e);
             return true;
         }
     }

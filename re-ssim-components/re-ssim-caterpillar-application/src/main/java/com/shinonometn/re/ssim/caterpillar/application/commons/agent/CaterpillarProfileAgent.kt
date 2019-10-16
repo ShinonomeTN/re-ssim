@@ -6,6 +6,7 @@ import reactor.core.publisher.Flux
 import us.codecraft.webmagic.Site
 import us.codecraft.webmagic.Spider
 import java.io.File
+import kotlin.properties.ReadWriteProperty
 
 abstract class CaterpillarProfileAgent(profileMap: MutableMap<String, Any?>) {
 

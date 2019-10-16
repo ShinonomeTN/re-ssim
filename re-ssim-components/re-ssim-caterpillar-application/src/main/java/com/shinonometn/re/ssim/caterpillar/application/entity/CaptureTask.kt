@@ -3,7 +3,6 @@ package com.shinonometn.re.ssim.caterpillar.application.entity
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.shinonometn.re.ssim.caterpillar.application.commons.CaptureTaskStage
 import com.shinonometn.re.ssim.caterpillar.application.utils.JsonMapAttributeConverter
-import org.springframework.data.mongodb.core.mapping.Document
 import java.io.Serializable
 import java.util.*
 import javax.persistence.*

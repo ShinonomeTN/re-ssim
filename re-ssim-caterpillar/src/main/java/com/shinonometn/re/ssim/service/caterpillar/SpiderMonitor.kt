@@ -13,7 +13,7 @@ import java.util.stream.Stream
  * Spider monitor is used for registering spiders to a list for managing.
  *
  */
-class SpiderMonitor {
+open class SpiderMonitor {
 
     private val logger = LoggerFactory.getLogger(this.javaClass)
 
@@ -23,7 +23,9 @@ class SpiderMonitor {
 
     fun getSpiderStatus(): Map<String, SpiderStatus> = spiderStatus
 
-    fun removeSpiderStatusMonitor(id: String) = spiderStatus.remove(id)
+    fun removeSpiderStatusMonitor(id: String) {
+        spiderStatus.remove(id)
+    }
 
     @Synchronized
     fun register(vararg spiders: Spider): SpiderMonitor {
