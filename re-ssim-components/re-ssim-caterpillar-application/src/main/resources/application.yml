@@ -1,17 +1,21 @@
 spring:
-  data:
-    jpa:
-      show-sql: true
-      open-in-view: false
-      database: mysql
-      hibernate:
-        ddl-auto: update
-    datasource:
-      driver-class-name: com.mysql.cj.jdbc.Driver
-      url: jdbc:mysql:///db_ressim_caterpillar
-      username: app_ressim_caterpillar
-      password: 123456
+  jpa:
+    show-sql: true
+    database: mysql
+    hibernate:
+      ddl-auto: update
+  datasource:
+    driver-class-name: com.mysql.jdbc.Driver
+    url: jdbc:mysql:///db_ressim_caterpillar
+    username: app_ressim
+    password: 123456
 
 application:
   data:
     path: ./data
+
+logging:
+  level:
+    root: info
+    caterpillar_profile_agent.*: debug
+    caterpillar_service: trace

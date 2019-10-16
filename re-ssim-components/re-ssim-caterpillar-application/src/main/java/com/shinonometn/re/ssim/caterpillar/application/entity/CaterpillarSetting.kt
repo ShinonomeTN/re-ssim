@@ -2,14 +2,12 @@ package com.shinonometn.re.ssim.caterpillar.application.entity
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.shinonometn.re.ssim.caterpillar.application.utils.JsonMapAttributeConverter
-import org.springframework.data.annotation.Id
 import java.io.Serializable
-import javax.persistence.Column
-import javax.persistence.Convert
-import javax.persistence.GeneratedValue
-import javax.persistence.GenerationType
+import javax.persistence.*
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@Entity
+@Table(name = "tb_caterpillar_settings")
 class CaterpillarSetting : Serializable {
 
     /*

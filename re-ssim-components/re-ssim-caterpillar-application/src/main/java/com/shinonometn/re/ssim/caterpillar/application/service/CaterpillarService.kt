@@ -10,35 +10,33 @@ import com.shinonometn.re.ssim.caterpillar.application.entity.CaterpillarSetting
 import com.shinonometn.re.ssim.caterpillar.application.repository.CaptureTaskRepository
 import com.shinonometn.re.ssim.commons.BusinessException
 import com.shinonometn.re.ssim.service.caterpillar.SpiderMonitor
-import com.shinonometn.re.ssim.service.caterpillar.kingo.KingoUrls
 import org.slf4j.LoggerFactory
 import org.springframework.core.task.TaskExecutor
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
-import us.codecraft.webmagic.Request
-import us.codecraft.webmagic.Site
+import org.springframework.transaction.support.TransactionTemplate
+import reactor.core.scheduler.Schedulers
 import us.codecraft.webmagic.Spider
-import us.codecraft.webmagic.model.HttpRequestBody
-import us.codecraft.webmagic.utils.HttpConstant
-import java.io.File
 import java.util.*
-import java.util.stream.Stream
 
 @Service
-class CaterpillarService(private val fileManageService: CaterpillarFileManageService,
-                         private val spiderMonitor: SpiderMonitor,
-                         private val taskExecutor: TaskExecutor,
-                         private val captureTaskRepository: CaptureTaskRepository) {
+open class CaterpillarService(private val fileManageService: CaterpillarFileManageService,
+                              private val spiderMonitor: SpiderMonitor,
+                              private val taskExecutor: TaskExecutor,
+                              private val captureTaskRepository: CaptureTaskRepository,
+                              private val transactionTemplate: TransactionTemplate) {
 
-    private val logger = LoggerFactory.getLogger(CaterpillarService::class.java)
+    private val logger = LoggerFactory.getLogger("caterpillar_service")
 
     // TODO Use Factory Method
     private fun requireAgentByProfile(caterpillarSetting: CaterpillarSetting): CaterpillarProfileAgent {
 
         if (caterpillarSetting.caterpillarProfile == null) throw BusinessException("caterpillar_profile_empty")
 
-        return KingoCaterpillarProfileAgent(caterpillarSetting.caterpillarProfile!!)
+        return KingoCaterpillarProfileAgent(caterpillarSetting.caterpillarProfile!!).apply {
+            bindSpiderMonitor(spiderMonitor)
+        }
     }
 
     // TODO Use external cache
@@ -174,6 +172,12 @@ class CaterpillarService(private val fileManageService: CaterpillarFileManageSer
      */
     fun startByTaskIdAndSettings(taskId: Int, caterpillarSetting: CaterpillarSetting): CaptureTaskDetails {
 
+        fun updateTaskStatus(taskId: Int, stage: CaptureTaskStage, reporting: String) {
+            transactionTemplate.execute {
+                captureTaskRepository.updateTaskStatus(taskId, stage, reporting)
+            }
+        }
+
         val captureTaskDetails = captureTaskRepository
                 .findById(taskId)
                 .map { this.getTaskDetails(it) }
@@ -183,26 +187,21 @@ class CaterpillarService(private val fileManageService: CaterpillarFileManageSer
 
         val captureTask = captureTaskDetails.taskInfo
 
-        // TODO Refactoring this using RxJava
-        changeCaptureTaskStatus(captureTask, CaptureTaskStage.INITIALIZE, "task_initialing")
-//        emitTaskCreateMessage()
+        val taskUUID = taskId.toString()
+        val termCode = captureTask.termCode ?: throw IllegalArgumentException("term_code_should_not_be_null")
 
-        taskExecutor.execute {
-
-
-        }
+        requireAgentByProfile(caterpillarSetting)
+                .fetchCoursesData(taskUUID, termCode, fileManageService.contextOf(taskId).file)
+                .subscribeOn(Schedulers.fromExecutor(taskExecutor))
+                .doOnError { error ->
+                    updateTaskStatus(taskId, CaptureTaskStage.STOPPED, "Error: ${error.javaClass.name}, cause ${error.message}")
+                }
+                .subscribe { e ->
+                    updateTaskStatus(taskId, e.stage, e.message)
+                }
 
         return captureTaskDetails
     }
-
-    private fun emitTaskCreateMessage() {
-        // TODO
-    }
-
-    private fun emitTaskFinishMessage() {
-        // TODO
-    }
-
 
     /**
      * Delete a not running task
@@ -231,7 +230,12 @@ class CaterpillarService(private val fileManageService: CaterpillarFileManageSer
      * @return result
      */
     fun validateSettings(caterpillarSetting: CaterpillarSetting): Boolean {
-        return doLogin(caterpillarSetting) != null
+        return try {
+            requireAgentByProfile(caterpillarSetting).validateSetting()
+            true
+        } catch (e: Exception) {
+            false
+        }
     }
 
     /**
@@ -250,8 +254,6 @@ class CaterpillarService(private val fileManageService: CaterpillarFileManageSer
 
      */
 
-    // TODO Put spider business into ProfileAgents
-
     private fun getTaskDetails(captureTask: CaptureTask): CaptureTaskDetails {
         val captureTaskDetails = CaptureTaskDetails()
         captureTaskDetails.taskInfo = captureTask
@@ -259,15 +261,13 @@ class CaterpillarService(private val fileManageService: CaterpillarFileManageSer
         return captureTaskDetails
     }
 
-    private fun requireTempFolder(taskId: Int): File {
-        val file = File(fileManageService.contextOf(taskId).file, "/capturing")
-        if (!file.exists()) if (!file.mkdirs()) throw IllegalStateException("create_temp_folder_failed")
-        val files = file.listFiles()
-        if (files != null) Stream.of(*files).forEach { it.delete() }
-        return file
-    }
-
-
+//    private fun requireTempFolder(taskId: Int): File {
+//        val file = File(fileManageService.contextOf(taskId).file, "/capturing")
+//        if (!file.exists()) if (!file.mkdirs()) throw IllegalStateException("create_temp_folder_failed")
+//        val files = file.listFiles()
+//        if (files != null) Stream.of(*files).forEach { it.delete() }
+//        return file
+//    }
 
     private fun changeCaptureTaskStatus(captureTask: CaptureTask, status: CaptureTaskStage?, description: String?) {
         if (status != null) captureTask.stage = status

@@ -1,9 +1,7 @@
 spring:
-  data:
-    mongodb:
-      database: test_ssimDB_caterpillar
-      host: 127.0.0.1
-      port: 27017
+  datasource:
+    url: jdbc:mysql:///db_ressim_caterpillar_test
+
 
 application:
   data:

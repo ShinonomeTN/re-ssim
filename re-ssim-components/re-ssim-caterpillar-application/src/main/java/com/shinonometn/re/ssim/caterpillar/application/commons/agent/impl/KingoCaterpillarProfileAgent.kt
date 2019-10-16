@@ -101,7 +101,7 @@ data class KingoCaterpillarProfileAgent(private val map: MutableMap<String, Any?
                 .setUUID(taskUUID)
                 .thread(taskThreads)
 
-        spiderMonitor.register(spider)
+        registerSpiderToMonitor(spider)
 
         it.next(ProfileAgentMessage(CaptureTaskStage.CAPTURE, "downloading_courses"))
         try {
@@ -110,6 +110,12 @@ data class KingoCaterpillarProfileAgent(private val map: MutableMap<String, Any?
             it.error(e)
         }
         it.next(ProfileAgentMessage(CaptureTaskStage.STOPPED, "terminated"))
+    }
+
+    override fun validateSetting() {
+        val site = createSite()
+        val contextData = prepareLoginToKingo(site)
+        doLoginToKingo(site, contextData)
     }
 
     /*

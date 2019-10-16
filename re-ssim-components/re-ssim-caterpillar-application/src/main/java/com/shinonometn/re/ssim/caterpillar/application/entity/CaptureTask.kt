@@ -3,18 +3,18 @@ package com.shinonometn.re.ssim.caterpillar.application.entity
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.shinonometn.re.ssim.caterpillar.application.commons.CaptureTaskStage
 import com.shinonometn.re.ssim.caterpillar.application.utils.JsonMapAttributeConverter
-import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import java.io.Serializable
 import java.util.*
-import javax.persistence.Column
-import javax.persistence.Convert
+import javax.persistence.*
 
-@Document
+@Entity
+@Table(name = "tb_caterpillar_tasks")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 class CaptureTask : Serializable {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     var id: Int? = null
 
     var schoolIdentity: String? = null
