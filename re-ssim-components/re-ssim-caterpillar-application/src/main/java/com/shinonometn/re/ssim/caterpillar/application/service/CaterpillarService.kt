@@ -1,7 +1,7 @@
 package com.shinonometn.re.ssim.caterpillar.application.service
 
 import com.shinonometn.re.ssim.caterpillar.application.commons.CaptureTaskStage
-import com.shinonometn.re.ssim.caterpillar.application.commons.TermItem
+import com.shinonometn.re.ssim.caterpillar.application.commons.TermLabelItem
 import com.shinonometn.re.ssim.caterpillar.application.commons.agent.CaterpillarProfileAgent
 import com.shinonometn.re.ssim.caterpillar.application.commons.agent.impl.KingoCaterpillarProfileAgent
 import com.shinonometn.re.ssim.caterpillar.application.dto.CaptureTaskDetails
@@ -9,13 +9,8 @@ import com.shinonometn.re.ssim.caterpillar.application.entity.CaptureTask
 import com.shinonometn.re.ssim.caterpillar.application.entity.CaterpillarSetting
 import com.shinonometn.re.ssim.caterpillar.application.repository.CaptureTaskRepository
 import com.shinonometn.re.ssim.commons.BusinessException
-import com.shinonometn.re.ssim.commons.JSON
 import com.shinonometn.re.ssim.service.caterpillar.SpiderMonitor
 import com.shinonometn.re.ssim.service.caterpillar.kingo.KingoUrls
-import com.shinonometn.re.ssim.service.caterpillar.kingo.capture.CourseDetailsPageProcessor
-import com.shinonometn.re.ssim.service.caterpillar.kingo.capture.CoursesListPageProcessor
-import com.shinonometn.re.ssim.service.caterpillar.kingo.capture.LoginExecutePageProcessor
-import com.shinonometn.re.ssim.service.caterpillar.kingo.capture.LoginPreparePageProcessor
 import org.slf4j.LoggerFactory
 import org.springframework.core.task.TaskExecutor
 import org.springframework.data.domain.Page
@@ -27,10 +22,7 @@ import us.codecraft.webmagic.Spider
 import us.codecraft.webmagic.model.HttpRequestBody
 import us.codecraft.webmagic.utils.HttpConstant
 import java.io.File
-import java.io.FileOutputStream
 import java.util.*
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.stream.Collectors
 import java.util.stream.Stream
 
 @Service
@@ -50,7 +42,7 @@ class CaterpillarService(private val fileManageService: CaterpillarFileManageSer
     }
 
     // TODO Use external cache
-    private var cachedTermItemList: Collection<TermItem> = Collections.emptyList<>()
+    private var cachedTermLabelItemList: Collection<TermLabelItem> = Collections.emptyList()
 
     /*
 
@@ -88,12 +80,12 @@ class CaterpillarService(private val fileManageService: CaterpillarFileManageSer
      *
      * @return a map, term code as key, term name as value
      */
-    fun captureTermListFromRemote(caterpillarSetting: CaterpillarSetting): Collection<TermItem> {
-        this.cachedTermItemList = requireAgentByProfile(caterpillarSetting).fetchTerms()
-        return cachedTermItemList;
+    fun captureTermListFromRemote(caterpillarSetting: CaterpillarSetting): Collection<TermLabelItem> {
+        this.cachedTermLabelItemList = requireAgentByProfile(caterpillarSetting).fetchTerms()
+        return cachedTermLabelItemList;
     }
 
-    fun cachedTermItemList() = this.cachedTermItemList
+    fun cachedTermItemList() = this.cachedTermLabelItemList
 
     /*
      *
@@ -119,7 +111,7 @@ class CaterpillarService(private val fileManageService: CaterpillarFileManageSer
         captureTask.termCode = termCode
 
         // TODO Use external method
-        captureTask.termName = cachedTermItemList
+        captureTask.termName = cachedTermLabelItemList
                 .find { it.title == termCode }?.title ?: throw BusinessException("term_not_exists")
 
         captureTask.stage = CaptureTaskStage.NONE
@@ -193,48 +185,11 @@ class CaterpillarService(private val fileManageService: CaterpillarFileManageSer
 
         // TODO Refactoring this using RxJava
         changeCaptureTaskStatus(captureTask, CaptureTaskStage.INITIALIZE, "task_initialing")
-        emitTaskCreateMessage()
+//        emitTaskCreateMessage()
 
         taskExecutor.execute {
 
-            changeCaptureTaskStatus(captureTask, null, "login_to_kingo")
 
-            try {
-                val site = doLogin(caterpillarSetting)
-
-                val dataFolder = fileManageService.contextOf(taskId)
-                if (!dataFolder.exists() && !dataFolder.file.mkdirs())
-                    throw BusinessException("Could not create work directory for task")
-
-                val spider = Spider.create(CourseDetailsPageProcessor(site))
-                        .addPipeline { resultItems, task ->
-                            try {
-                                val course = CourseDetailsPageProcessor.getSubject(resultItems)
-                                JSON.write(FileOutputStream(File(dataFolder.file, Objects.requireNonNull(course.code))), course)
-                            } catch (e: Exception) {
-                                changeCaptureTaskStatus(captureTask, null, "failed:" + e.message)
-                                throw RuntimeException(e)
-                            }
-                        }
-                        .setUUID(taskId.toString())
-                        .thread(caterpillarSetting.threads)
-
-                spider.startRequest(fetchTermCourseList(site, captureTaskDetails.taskInfo.termCode)
-                        .stream()
-                        .map { id -> createSubjectRequest(site, captureTaskDetails.taskInfo.termCode, id) }
-                        .collect(Collectors.toList()))
-
-                spiderMonitor.register(spider)
-
-                changeCaptureTaskStatus(captureTask, CaptureTaskStage.CAPTURE, "downloading")
-                spider.run()
-                changeCaptureTaskStatus(captureTask, CaptureTaskStage.STOPPED, "stopped")
-
-            } catch (e: BusinessException) {
-                changeCaptureTaskStatus(captureTask, null, "failed:" + e.message)
-            } finally {
-                emitTaskFinishMessage()
-            }
         }
 
         return captureTaskDetails
@@ -304,19 +259,6 @@ class CaterpillarService(private val fileManageService: CaterpillarFileManageSer
         return captureTaskDetails
     }
 
-    private fun fetchTermCourseList(site: Site, termCode: String?): Collection<String> {
-        val termList = HashMap<String, String>()
-
-        Spider.create(CoursesListPageProcessor(site))
-                .addUrl(KingoUrls.subjectListQueryPath + termCode!!)
-                .addPipeline { resultItems, task -> termList.putAll(CoursesListPageProcessor.getCourseList(resultItems)) }
-                .run()
-
-        logger.debug("Fetched remote course list of term {}.", termCode)
-
-        return termList.keys
-    }
-
     private fun requireTempFolder(taskId: Int): File {
         val file = File(fileManageService.contextOf(taskId).file, "/capturing")
         if (!file.exists()) if (!file.mkdirs()) throw IllegalStateException("create_temp_folder_failed")
@@ -325,65 +267,7 @@ class CaterpillarService(private val fileManageService: CaterpillarFileManageSer
         return file
     }
 
-    private fun doLogin(caterpillarSetting: CaterpillarSetting): Site {
 
-        val site = caterpillarSetting.createSite()
-
-        val username = caterpillarSetting.username
-        val password = caterpillarSetting.password
-        val role = caterpillarSetting.role
-
-
-        val items = HashMap<String, Any>()
-
-        Spider.create(LoginPreparePageProcessor(username, password, role, site))
-                .addUrl(KingoUrls.loginPageAddress)
-                .addPipeline { r, t -> items.putAll(r.all) }
-                .run()
-
-        val loginResult = AtomicBoolean(false)
-
-        if (!LoginPreparePageProcessor.getIsReady(items)) throw IllegalStateException("could_not_get_login_form")
-
-        val cookies = LoginPreparePageProcessor.getCookie(items)
-        if (cookies != null) site.addCookie("ASP.NET_SessionId", cookies["ASP.NET_SessionId"])
-
-        val formFields = LoginPreparePageProcessor.getFormFields(items)
-
-        val loginRequest = Request(KingoUrls.loginPageAddress)
-        loginRequest.method = HttpConstant.Method.POST
-        loginRequest.addHeader("Content-Type", "application/x-www-form-urlencoded")
-        loginRequest.addHeader("Referer", KingoUrls.loginPageAddress)
-        loginRequest.requestBody = HttpRequestBody.form(formFields, Objects.requireNonNull(caterpillarSetting.encoding))
-
-
-        Spider.create(LoginExecutePageProcessor(site))
-                .addRequest(loginRequest)
-                .addPipeline { resultItems, task -> loginResult.set(LoginExecutePageProcessor.getIsLogin(resultItems)!!) }
-                .run()
-
-        logger.debug("Login to kingo {}.", if (loginResult.get()) "successful" else "failed")
-        if (!loginResult.get()) throw BusinessException("login_to_kingo_failed")
-
-        return site
-
-    }
-
-    private fun createSubjectRequest(site: Site, termCode: String?, subjectCode: String): Request {
-        val form = HashMap<String, Any>()
-        form["gs"] = "2"
-        form["txt_yzm"] = ""
-        form["Sel_XNXQ"] = termCode ?: ""
-        form["Sel_KC"] = subjectCode
-
-        val request = Request(KingoUrls.subjectQueryPage)
-        request.method = HttpConstant.Method.POST
-        request.requestBody = HttpRequestBody.form(form, site.charset)
-        request.addHeader("Referer", KingoUrls.classInfoQueryPage)
-
-        return request
-
-    }
 
     private fun changeCaptureTaskStatus(captureTask: CaptureTask, status: CaptureTaskStage?, description: String?) {
         if (status != null) captureTask.stage = status

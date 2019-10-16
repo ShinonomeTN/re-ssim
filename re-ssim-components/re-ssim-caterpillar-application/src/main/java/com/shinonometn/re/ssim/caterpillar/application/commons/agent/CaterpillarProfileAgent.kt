@@ -1,7 +1,9 @@
 package com.shinonometn.re.ssim.caterpillar.application.commons.agent
 
-import com.shinonometn.re.ssim.caterpillar.application.commons.TermItem
+import com.shinonometn.re.ssim.caterpillar.application.commons.TermLabelItem
+import reactor.core.publisher.Flux
 import us.codecraft.webmagic.Site
+import java.io.File
 
 abstract class CaterpillarProfileAgent(profileMap: MutableMap<String, Any?>) {
 
@@ -16,6 +18,8 @@ abstract class CaterpillarProfileAgent(profileMap: MutableMap<String, Any?>) {
     var retryTimes : Int by profileMap.withDefault { 81 }
 
     var sleepTimes : Int by profileMap.withDefault { 500 }
+
+    var taskThreads: Int by profileMap.withDefault { 2 }
 
     /**
      * provide the default target domain
@@ -45,5 +49,13 @@ abstract class CaterpillarProfileAgent(profileMap: MutableMap<String, Any?>) {
     /**
      * Fetch term list from remote
      */
-    abstract fun fetchTerms() : Collection<TermItem>
+    abstract fun fetchTerms() : Collection<TermLabelItem>
+
+    /**
+     * Fetch courses data from remote and save to files.
+     * Formats are defined by each caterpillar.
+     */
+    abstract fun fetchCoursesData(taskUUID: String,
+                                  termCode: String,
+                                  storageFolder: File) : Flux<ProfileAgentMessage>
 }
