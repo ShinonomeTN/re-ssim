@@ -17,7 +17,6 @@ import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.support.TransactionTemplate
 import reactor.core.scheduler.Schedulers
-import us.codecraft.webmagic.Spider
 import java.util.*
 
 @Service
@@ -147,7 +146,7 @@ open class CaterpillarService(private val fileManageService: CaterpillarFileMana
         val spiderStatus = getTaskDetails(captureTask).runningTaskStatus
                 ?: throw BusinessException("task_have_not_initialized")
 
-        if (spiderStatus.name == Spider.Status.Running.name) throw BusinessException("spider_running")
+        if ("Running" == spiderStatus.name) throw BusinessException("spider_running")
 
         spiderStatus.start()
 
@@ -209,7 +208,7 @@ open class CaterpillarService(private val fileManageService: CaterpillarFileMana
         if (spiderStatusMap.containsKey(id.toString())) {
 
             val spiderStatus = spiderStatusMap[id.toString()]
-            if (Spider.Status.Running.name == spiderStatus?.status)
+            if ("Running" == spiderStatus?.status)
                 throw BusinessException("spider_running")
 
             spiderMonitor.removeSpiderStatusMonitor(id.toString())
@@ -262,14 +261,6 @@ open class CaterpillarService(private val fileManageService: CaterpillarFileMana
         captureTaskDetails.runningTaskStatus = spiderMonitor.getSpiderStatus()[captureTask.id.toString()]
         return captureTaskDetails
     }
-
-//    private fun requireTempFolder(taskId: Int): File {
-//        val file = File(fileManageService.contextOf(taskId).file, "/capturing")
-//        if (!file.exists()) if (!file.mkdirs()) throw IllegalStateException("create_temp_folder_failed")
-//        val files = file.listFiles()
-//        if (files != null) Stream.of(*files).forEach { it.delete() }
-//        return file
-//    }
 
     private fun changeCaptureTaskStatus(captureTask: CaptureTask, status: CaptureTaskStage?, description: String?) {
         if (status != null) captureTask.stage = status
