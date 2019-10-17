@@ -3,6 +3,8 @@ package com.shinonometn.re.ssim.caterpillar.application.entity
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.shinonometn.re.ssim.caterpillar.application.commons.CaptureTaskStage
 import com.shinonometn.re.ssim.caterpillar.application.utils.JsonMapAttributeConverter
+import org.springframework.data.annotation.CreatedDate
+import org.springframework.data.jpa.domain.support.AuditingEntityListener
 import java.io.Serializable
 import java.util.*
 import javax.persistence.*
@@ -24,6 +26,7 @@ class CaptureTask : Serializable {
     @Column(columnDefinition = "TEXT")
     var captureProfile: MutableMap<String, Any?>? = null
 
+    @Temporal(TemporalType.TIMESTAMP)
     var createDate: Date? = null
 
     var stage: CaptureTaskStage? = null

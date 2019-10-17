@@ -21,19 +21,19 @@ abstract class CaterpillarProfileAgent(profileMap: MutableMap<String, Any?>) {
         }
     }
 
-    var agentCode: String by profileMap.withDefault { this.requireAgentCode() }
+    var agentCode: String? by profileMap.withDefault { this.requireAgentCode() }
 
-    var targetDomain: String by profileMap.withDefault { this.requireTargetDomain() }
+    var targetDomain: String? by profileMap.withDefault { this.requireTargetDomain() }
 
-    var userAgent: String by profileMap.withDefault { "WebMagic/0.7.3 re-ssim/2.0 (Lingnan College) AgentCode/$agentCode (CaterpillarProfileAgent/Kotlin.1.2.41)" }
+    var userAgent: String? by profileMap.withDefault { "WebMagic/0.7.3 re-ssim/2.0 (Lingnan College) AgentCode/$agentCode (CaterpillarProfileAgent/Kotlin.1.2.41)" }
 
-    var timeoutMillis: Int by profileMap.withDefault { 5000 }
+    var timeoutMillis: Int? by profileMap.withDefault { 5000 }
 
-    var retryTimes: Int by profileMap.withDefault { 81 }
+    var retryTimes: Int? by profileMap.withDefault { 81 }
 
-    var sleepTimes: Int by profileMap.withDefault { 500 }
+    var sleepTimes: Int? by profileMap.withDefault { 500 }
 
-    var taskThreads: Int by profileMap.withDefault { 2 }
+    var taskThreads: Int? by profileMap.withDefault { 2 }
 
     private var spiderMonitor: SpiderMonitor? = null
 
@@ -57,9 +57,9 @@ abstract class CaterpillarProfileAgent(profileMap: MutableMap<String, Any?>) {
     protected open fun createSite() = Site
             .me()
             .setDomain(this.targetDomain)
-            .setTimeOut(timeoutMillis)
-            .setRetryTimes(retryTimes)
-            .setSleepTime(sleepTimes)
+            .setTimeOut(timeoutMillis!!)
+            .setRetryTimes(retryTimes!!)
+            .setSleepTime(sleepTimes!!)
             .setUserAgent(userAgent)
 
     /*

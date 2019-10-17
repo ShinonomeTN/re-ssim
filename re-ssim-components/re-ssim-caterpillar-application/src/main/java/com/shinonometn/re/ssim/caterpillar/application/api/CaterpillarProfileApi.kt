@@ -1,6 +1,6 @@
-package com.shinonometn.re.ssim.caterpillar.application.controller
+package com.shinonometn.re.ssim.caterpillar.application.api
 
-import com.shinonometn.re.ssim.caterpillar.application.commons.agent.CaterpillarProfileAgent
+import com.shinonometn.re.ssim.caterpillar.application.dto.CaterpillarSettingsDto
 import com.shinonometn.re.ssim.caterpillar.application.entity.CaterpillarSetting
 import com.shinonometn.re.ssim.caterpillar.application.service.CaterpillarProfileService
 import com.shinonometn.re.ssim.caterpillar.application.service.CaterpillarService
@@ -12,7 +12,6 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.web.PageableDefault
 import org.springframework.web.bind.annotation.*
 import java.util.*
-import kotlin.collections.HashMap
 
 @RestController
 @RequestMapping("/profile")
@@ -36,16 +35,11 @@ open class CaterpillarProfileApi(private val caterpillarProfileService: Caterpil
         return caterpillarProfileService.findAll(pageable)
     }
 
-    data class CaterpillarSettingsDto(private val map: MutableMap<String, Any?> = HashMap()) {
-        var caterpillarSetting: CaterpillarSetting by map
-        var agentProfileInfo: CaterpillarProfileAgent by map
-    }
-
     /**
      * Get a caterpillar setting
      */
     @GetMapping("/{id}")
-    open fun get(@PathVariable("id") id: Int) =
+    open fun get(@PathVariable("id") id: Int): Optional<CaterpillarSettingsDto> =
             caterpillarProfileService.findById(id).map {
                 CaterpillarSettingsDto().apply {
                     this.caterpillarSetting = it

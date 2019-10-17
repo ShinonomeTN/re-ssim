@@ -1,5 +1,6 @@
-package com.shinonometn.re.ssim.caterpillar.application.controller
+package com.shinonometn.re.ssim.caterpillar.application.api
 
+import com.shinonometn.re.ssim.caterpillar.application.api.request.TaskCreateRequest
 import com.shinonometn.re.ssim.caterpillar.application.dto.CaptureTaskDetails
 import com.shinonometn.re.ssim.caterpillar.application.entity.CaptureTask
 import com.shinonometn.re.ssim.caterpillar.application.service.CaterpillarProfileService
@@ -19,31 +20,30 @@ import java.util.*
 open class CaterpillarTaskApi(private val caterpillarService: CaterpillarService,
                               private val caterpillarProfileService: CaterpillarProfileService) {
 
-    private val validator = Validator(ValidationMetaBuilder
-            .create()
-
+    private val validator = Validator(ValidationMetaBuilder.create()
             .of(TaskCreateRequest::class.java)
             .addValidator("termCode", ValidateFunctions.notEmpty())
             .addValidator("schoolIdentity", ValidateFunctions.notEmpty())
+            .build()
+    )
 
-            .build())
+    @GetMapping("/{id}")
+    fun getTask(@PathVariable("id") id: Int): Optional<CaptureTaskDetails> {
+        return caterpillarService.queryTask(id)
+    }
 
     @GetMapping
     fun listTasks(@PageableDefault pageable: Pageable): Page<CaptureTaskDetails> {
         return caterpillarService.listAllTasks(pageable)
     }
 
-    data class TaskCreateRequest(private val map: Map<String, Any?> = HashMap(2)) {
-        val termCode: String? by map
-        val schoolIdentity: String? by map
-    }
-
     @PostMapping
     fun createTask(@RequestBody request: TaskCreateRequest): CaptureTask {
         validator.validate(request)
+
         return caterpillarService.createTask(
-                request.termCode!!,
-                request.schoolIdentity!!
+                request.termCode,
+                request.schoolIdentity
         )
     }
 
@@ -76,7 +76,7 @@ open class CaterpillarTaskApi(private val caterpillarService: CaterpillarService
         return caterpillarService.startByTaskIdAndSettings(id, caterpillarProfile)
     }
 
-    @PostMapping("/{id}", params = ["stop"])
+    @DeleteMapping("/{id}")
     fun deleteTask(@PathVariable("id") id: Int) {
         caterpillarService.delete(id)
     }

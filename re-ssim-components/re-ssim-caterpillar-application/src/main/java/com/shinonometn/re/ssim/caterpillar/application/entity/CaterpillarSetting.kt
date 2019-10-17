@@ -27,6 +27,8 @@ class CaterpillarSetting : Serializable {
      */
     @Convert(converter = JsonMapAttributeConverter::class)
     @Column(columnDefinition = "TEXT")
-    var caterpillarProfile: MutableMap<String, Any?>? = null
+    var caterpillarProfile: MutableMap<String, Any?>? = HashMap()
 
+    @Transient
+    fun getAgentCode(): String? = caterpillarProfile?.getOrDefault("agentCode", null)?.toString()
 }

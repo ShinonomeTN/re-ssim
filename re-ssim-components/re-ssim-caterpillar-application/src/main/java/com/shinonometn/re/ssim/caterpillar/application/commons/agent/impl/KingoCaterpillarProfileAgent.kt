@@ -92,24 +92,24 @@ data class KingoCaterpillarProfileAgent(private val map: MutableMap<String, Any?
                 .addPipeline { resultItems, _ ->
                     try {
                         val course = CourseDetailsPageProcessor.getSubject(resultItems)
-                        JSON.write(FileOutputStream(File(storageFolder, Objects.requireNonNull(course.code))), course)
-                        logger.debug("downloaded:${course.code}_${course.name}")
+                        JSON.write(FileOutputStream(File(storageFolder, "${Objects.requireNonNull(course.code)}.json")), course)
+                        logger.debug("downloaded: [${course.code}] ${course.name}")
                     } catch (e: Exception) {
                         it.error(Exception("Spider $taskUUID failed: ${e.message}", e))
                     }
                 }
                 .setUUID(taskUUID)
-                .thread(taskThreads)
+                .thread(taskThreads!!)
 
         registerSpiderToMonitor(spider)
 
         it.next(ProfileAgentMessage(CaptureTaskStage.CAPTURE, "downloading_courses"))
         try {
             spider.run()
+            it.next(ProfileAgentMessage(CaptureTaskStage.STOPPED, "terminated"))
         } catch (e: Exception) {
             it.error(e)
         }
-        it.next(ProfileAgentMessage(CaptureTaskStage.STOPPED, "terminated"))
     }
 
     override fun validateSetting() {

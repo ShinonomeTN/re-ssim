@@ -1,5 +1,6 @@
 package com.shinonometn.re.ssim.commons.file.fundation;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 
 import java.io.*;
@@ -48,6 +49,14 @@ public class FileServiceAdapter<I extends Serializable> implements FileService<I
     @Override
     public FileContext get(I i, String filename) {
         return contextOf(i).contextOf(filename);
+    }
+
+    @Override
+    public void delete(I i) throws IOException {
+        FileContext fileContext = contextOf(i);
+        if (fileContext.exists()) {
+            FileUtils.deleteDirectory(fileContext.getFile());
+        }
     }
 
     public File getRootFolder() {

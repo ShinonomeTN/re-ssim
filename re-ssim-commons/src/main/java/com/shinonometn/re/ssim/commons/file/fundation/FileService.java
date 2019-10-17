@@ -10,6 +10,8 @@ public interface FileService<EntityId extends Serializable> {
 
     FileContext get(EntityId id, String filename);
 
+    void delete(EntityId id) throws IOException;
+
     String getDomainName();
 
     File getRootFolder();

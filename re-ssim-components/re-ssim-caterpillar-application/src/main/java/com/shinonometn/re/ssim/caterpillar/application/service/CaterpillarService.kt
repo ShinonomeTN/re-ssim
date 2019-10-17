@@ -17,6 +17,7 @@ import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.support.TransactionTemplate
 import reactor.core.scheduler.Schedulers
+import java.io.File
 import java.util.*
 
 @Service
@@ -56,7 +57,7 @@ open class CaterpillarService(private val fileManageService: CaterpillarFileMana
             spiderMonitor.getSpiderStatus()
                     .values
                     .stream()
-                    .filter { i -> i.status == "Running" }
+                    .filter { i -> i != null && i.status == "Running" }
                     .count()
 
 
@@ -109,7 +110,7 @@ open class CaterpillarService(private val fileManageService: CaterpillarFileMana
 
         // TODO Use external method
         captureTask.termName = cachedTermLabelItemList
-                .find { it.title == termCode }?.title ?: throw BusinessException("term_not_exists")
+                .find { it.identity == termCode }?.title ?: throw BusinessException("term_not_exists")
 
         captureTask.stage = CaptureTaskStage.NONE
         captureTask.stageReport = "task_created"
@@ -132,7 +133,7 @@ open class CaterpillarService(private val fileManageService: CaterpillarFileMana
 
         spiderStatus.stop()
 
-        changeCaptureTaskStatus(captureTask, null, "task_has_been_stopped")
+        changeCaptureTaskStatus(captureTask, CaptureTaskStage.STOPPED, "task_manually_stopped")
     }
 
     /**
@@ -150,7 +151,7 @@ open class CaterpillarService(private val fileManageService: CaterpillarFileMana
 
         spiderStatus.start()
 
-        changeCaptureTaskStatus(getTaskDetails(captureTask).taskInfo, null, "task_resumed")
+        changeCaptureTaskStatus(getTaskDetails(captureTask).taskInfo, CaptureTaskStage.CAPTURE, "task_resumed")
 
         return getTaskDetails(captureTask)
     }
@@ -185,7 +186,7 @@ open class CaterpillarService(private val fileManageService: CaterpillarFileMana
         val termCode = captureTask.termCode ?: throw IllegalArgumentException("term_code_should_not_be_null")
 
         requireAgentByProfile(caterpillarSetting)
-                .fetchCoursesData(taskUUID, termCode, fileManageService.contextOf(taskId).file)
+                .fetchCoursesData(taskUUID, termCode, File(fileManageService.contextOf(taskId).file, "data"))
                 .subscribeOn(Schedulers.fromExecutor(taskExecutor))
                 .doOnError { error ->
                     updateTaskStatus(taskId, CaptureTaskStage.STOPPED, "Error: ${error.javaClass.name}, cause ${error.message}")
@@ -193,6 +194,9 @@ open class CaterpillarService(private val fileManageService: CaterpillarFileMana
                 .subscribe { e ->
                     updateTaskStatus(taskId, e.stage, e.message)
                 }
+
+        captureTask.captureProfile = caterpillarSetting.caterpillarProfile
+        captureTaskRepository.save(captureTask)
 
         return captureTaskDetails
     }
@@ -205,16 +209,16 @@ open class CaterpillarService(private val fileManageService: CaterpillarFileMana
     fun delete(id: Int) {
         val spiderStatusMap = spiderMonitor.getSpiderStatus()
 
-        if (spiderStatusMap.containsKey(id.toString())) {
-
-            val spiderStatus = spiderStatusMap[id.toString()]
-            if ("Running" == spiderStatus?.status)
+        spiderStatusMap[id.toString()]?.run {
+            if ("Running" == status)
                 throw BusinessException("spider_running")
 
             spiderMonitor.removeSpiderStatusMonitor(id.toString())
         }
 
         captureTaskRepository.deleteById(id)
+
+        fileManageService.delete(id)
     }
 
     /**
