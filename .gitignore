@@ -1,5 +1,7 @@
-/target/
+/targe
 !.mvn/wrapper/maven-wrapper.jar
+
+/data
 
 ### STS ###
 .apt_generated
@@ -32,3 +34,6 @@ caterpillar_settings.properties
 
 ### Temp folder ###
 _temp/
+
+# local application settings
+/application.yml

@@ -1,0 +1,27 @@
+spring:
+  jpa:
+    show-sql: true
+    database: mysql
+    hibernate:
+      ddl-auto: update
+  datasource:
+    driver-class-name: com.mysql.jdbc.Driver
+    url: jdbc:mysql:///db_ressim_caterpillar
+    username: app_ressim
+    password: 123456
+
+
+application:
+  data:
+    path: ./data
+
+logging:
+  level:
+    root: info
+    caterpillar_profile_agent: debug
+    caterpillar_service: trace
+
+debug: false
+
+server:
+  port: 8081

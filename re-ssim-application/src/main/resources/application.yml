@@ -1,0 +1,38 @@
+spring:
+  data:
+    mongodb:
+      database: ssimDB
+      host: 127.0.0.1
+      port: 27017
+  redis:
+    host: 127.0.0.1
+#    port: 6379
+  cache:
+    type: redis
+    redis:
+      time-to-live: 6H
+#      key-prefix: app.cache.
+  http:
+    encoding:
+      enabled: true
+      charset: UTF-8
+
+  session:
+    store-type: redis
+    redis:
+      flush-mode: on_save
+      namespace: web.session.
+
+app:
+#  cache:
+#    role:
+#      use-second-level-cache: true # Set 'false' if using cluster
+  dataDir: ./data
+  inMemoryDataKey: app:key
+
+server:
+  tomcat:
+    uri-encoding: UTF-8
+  servlet:
+    context-path: /api
+
