@@ -31,8 +31,8 @@ data class KingoCaterpillarProfileAgent(private val map: MutableMap<String, Any?
 
     private val logger = LoggerFactory.getLogger("caterpillar_profile_agent.${this.requireAgentCode()}")
 
-    var username: String? by map
-    var password: String? by map
+    var username: String? by map.withDefault { null }
+    var password: String? by map.withDefault { null }
     var role: String by map.withDefault { "STU" }
 
     var encoding: String by map.withDefault { "utf8" }

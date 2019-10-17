@@ -101,7 +101,7 @@ open class CaterpillarService(private val fileManageService: CaterpillarFileMana
      * @param termCode termName code
      * @return created task
      */
-    fun createByTermCode(termCode: String): CaptureTask {
+    fun createTask(termCode: String, schoolIdentity: String): CaptureTask {
         val captureTask = CaptureTask()
 
         captureTask.createDate = Date()
@@ -115,6 +115,8 @@ open class CaterpillarService(private val fileManageService: CaterpillarFileMana
         captureTask.stage = CaptureTaskStage.NONE
         captureTask.stageReport = "task_created"
 
+        captureTask.schoolIdentity = schoolIdentity
+
         return captureTaskRepository.save(captureTask)
     }
 
@@ -124,19 +126,14 @@ open class CaterpillarService(private val fileManageService: CaterpillarFileMana
      * @param taskId task id
      * @return task dto
      */
-    fun stopTaskById(taskId: Int): CaptureTaskDetails? {
-        val captureTask = captureTaskRepository.findById(taskId).orElse(null) ?: return null
+    fun stopTask(captureTask: CaptureTask) {
 
-        val spiderStatus = spiderMonitor.getSpiderStatus()[taskId.toString()]
+        val spiderStatus = spiderMonitor.getSpiderStatus()[captureTask.id.toString()]
                 ?: throw BusinessException("task_have_not_initialized")
+
         spiderStatus.stop()
 
         changeCaptureTaskStatus(captureTask, null, "task_has_been_stopped")
-
-        return captureTaskRepository
-                .findById(taskId)
-                .map { this.getTaskDetails(it) }
-                .orElse(null)
     }
 
     /**
@@ -145,20 +142,18 @@ open class CaterpillarService(private val fileManageService: CaterpillarFileMana
      * @param taskId task id
      * @return dto
      */
-    fun resumeTaskById(taskId: Int): CaptureTaskDetails? {
-        val captureTaskDetails = captureTaskRepository
-                .findById(taskId)
-                .map { this.getTaskDetails(it) }
-                .orElse(null)
-                ?: return null
+    fun resumeTask(captureTask: CaptureTask): CaptureTaskDetails? {
 
-        val spiderStatus = captureTaskDetails.runningTaskStatus ?: throw BusinessException("task_have_not_initialized")
+        val spiderStatus = getTaskDetails(captureTask).runningTaskStatus
+                ?: throw BusinessException("task_have_not_initialized")
+
         if (spiderStatus.name == Spider.Status.Running.name) throw BusinessException("spider_running")
 
         spiderStatus.start()
-        changeCaptureTaskStatus(captureTaskDetails.taskInfo, null, "task_resumed")
 
-        return captureTaskDetails
+        changeCaptureTaskStatus(getTaskDetails(captureTask).taskInfo, null, "task_resumed")
+
+        return getTaskDetails(captureTask)
     }
 
     /**
@@ -244,8 +239,15 @@ open class CaterpillarService(private val fileManageService: CaterpillarFileMana
      * @param id id
      * @return dto
      */
-    fun queryTask(id: Int): CaptureTaskDetails? {
-        return captureTaskRepository.findById(id).map { this.getTaskDetails(it) }.orElse(null)
+    fun queryTask(id: Int): Optional<CaptureTaskDetails> {
+        return captureTaskRepository.findById(id).map { this.getTaskDetails(it) }
+    }
+
+    /**
+     * Get a task by id
+     */
+    fun getTask(id: Int): Optional<CaptureTask> {
+        return captureTaskRepository.findById(id)
     }
 
     /*

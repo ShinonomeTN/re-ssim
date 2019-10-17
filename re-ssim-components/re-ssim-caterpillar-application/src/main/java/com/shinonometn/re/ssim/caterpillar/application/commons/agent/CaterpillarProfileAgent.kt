@@ -6,9 +6,20 @@ import reactor.core.publisher.Flux
 import us.codecraft.webmagic.Site
 import us.codecraft.webmagic.Spider
 import java.io.File
-import kotlin.properties.ReadWriteProperty
 
 abstract class CaterpillarProfileAgent(profileMap: MutableMap<String, Any?>) {
+
+    init {
+        // null values are meaningless, remove all of them
+        val nullKeyList = profileMap.entries
+                .filter { it.value == null }
+                .map { it.key }
+                .toList()
+
+        nullKeyList.forEach {
+            profileMap.remove(it)
+        }
+    }
 
     var agentCode: String by profileMap.withDefault { this.requireAgentCode() }
 
