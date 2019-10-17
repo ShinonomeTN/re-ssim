@@ -36,10 +36,11 @@ open class CaterpillarProfileApi(private val caterpillarProfileService: Caterpil
         return caterpillarProfileService.findAll(pageable)
     }
 
-    data class CaterpillarSettingsDto(private val map: MutableMap<String, Any?> = HashMap()){
+    data class CaterpillarSettingsDto(private val map: MutableMap<String, Any?> = HashMap()) {
         var caterpillarSetting: CaterpillarSetting by map
         var agentProfileInfo: CaterpillarProfileAgent by map
     }
+
     /**
      * Get a caterpillar setting
      */
@@ -68,5 +69,17 @@ open class CaterpillarProfileApi(private val caterpillarProfileService: Caterpil
                 .orElseThrow { BusinessException("setting_not_found") }
 
         return caterpillarService.validateSettings(caterpillarSetting)
+    }
+
+    @GetMapping(params = ["owner"])
+    open fun findByUser(@RequestParam("owner") owner: String,
+                        @PageableDefault pageable: Pageable): Page<CaterpillarSetting> {
+        return caterpillarProfileService.findAllByUser(owner, pageable)
+    }
+
+    @GetMapping(params = ["owner", "profile_name"])
+    open fun getByUserAndProfileName(@RequestParam("owner") owner: String,
+                                     @RequestParam("profile_name") profileName: String): Optional<CaterpillarSetting> {
+        return caterpillarProfileService.findProfile(owner, profileName)
     }
 }

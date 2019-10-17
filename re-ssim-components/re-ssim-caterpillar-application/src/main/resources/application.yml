@@ -18,7 +18,7 @@ application:
 logging:
   level:
     root: info
-    caterpillar_profile_agent.*: debug
+    caterpillar_profile_agent: debug
     caterpillar_service: trace
 
 debug: false
