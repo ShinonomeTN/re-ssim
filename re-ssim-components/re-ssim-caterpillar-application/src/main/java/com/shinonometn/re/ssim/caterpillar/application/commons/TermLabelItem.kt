@@ -1,3 +1,3 @@
 package com.shinonometn.re.ssim.caterpillar.application.commons
 
-data class TermLabelItem(val identity: String, val title: String)
+data class TermLabelItem(var identity: String? = null, var title: String? = null)

@@ -10,4 +10,12 @@ public class CaterpillarFileManageService extends FileServiceAdapter<Integer> {
     public CaterpillarFileManageService(File rootFolder) {
         super(rootFolder, "caterpillar");
     }
+
+    public File dataFolderOfTask(Integer taskId) {
+        return new File(contextOf(taskId).getFile(), "data");
+    }
+
+    public File bundleFileOfTask(Integer taskId) {
+        return new File(contextOf(taskId).getFile(), "data_bundle.zip");
+    }
 }

@@ -9,9 +9,13 @@ import com.shinonometn.re.ssim.commons.BusinessException
 import com.shinonometn.re.ssim.commons.validation.ValidationMetaBuilder
 import com.shinonometn.re.ssim.commons.validation.Validator
 import com.shinonometn.re.ssim.commons.validation.helper.ValidateFunctions
+import org.springframework.core.io.FileSystemResource
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.web.PageableDefault
+import org.springframework.http.HttpHeaders
+import org.springframework.http.MediaType
+import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import java.util.*
 
@@ -80,4 +84,17 @@ open class CaterpillarTaskApi(private val caterpillarService: CaterpillarService
     fun deleteTask(@PathVariable("id") id: Int) {
         caterpillarService.delete(id)
     }
+
+    @GetMapping("/{id}/bundle", produces = [MediaType.APPLICATION_OCTET_STREAM_VALUE])
+    fun bundle(@PathVariable("id") id: Int,
+               @RequestParam("deleteOld", defaultValue = "false") deleteOld: Boolean): ResponseEntity<FileSystemResource> {
+
+        val task = caterpillarService.getTask(id).orElseThrow { BusinessException("task_not_found") }
+
+        return ResponseEntity
+                .ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,"attachment; filename=\"task_${id}_bundle.zip\"")
+                .body(FileSystemResource(caterpillarService.bundleData(task, deleteOld)))
+    }
+
 }

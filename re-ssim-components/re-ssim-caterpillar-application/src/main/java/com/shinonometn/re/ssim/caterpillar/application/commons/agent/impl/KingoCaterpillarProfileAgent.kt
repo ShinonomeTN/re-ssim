@@ -83,7 +83,7 @@ data class KingoCaterpillarProfileAgent(private val map: MutableMap<String, Any?
         it.next(ProfileAgentMessage(CaptureTaskStage.INITIALIZE, "fetching_remote_courses_list"))
         val courseCodeList = fetchTermCourseList(site, termCode)
                 .stream()
-                .map { item -> createSubjectRequest(site, termCode, item.courseCode) }
+                .map { item -> createSubjectRequest(site, termCode, item.courseCode!!) }
                 .collect(Collectors.toList())
 
         it.next(ProfileAgentMessage(CaptureTaskStage.INITIALIZE, "preparing_caterpillar"))

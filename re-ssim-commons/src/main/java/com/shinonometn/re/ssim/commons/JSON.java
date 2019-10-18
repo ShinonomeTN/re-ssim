@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,5 +49,15 @@ public class JSON {
         } catch (JsonProcessingException e) {
             return "{}";
         }
+    }
+
+    @Nullable
+    public static byte[] writeToByte(@Nullable Object o) throws JsonProcessingException {
+        return mapper.writeValueAsBytes(o);
+    }
+
+    @Nullable
+    public static <T> T read(byte[] bytes, TypeReference<T> typeReference) throws IOException {
+        return mapper.readerFor(typeReference).readValue(bytes);
     }
 }
