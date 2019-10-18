@@ -12,6 +12,8 @@
     <modules>
         <module>re-ssim-discover</module>
         <module>re-ssim-caterpillar-application</module>
+        <module>re-ssim-course-query-application</module>
+        <module>re-ssim-user-service-application</module>
         <!--<module>re-ssim-data-manager-application</module>-->
     </modules>
 
