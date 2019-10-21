@@ -22,8 +22,8 @@ open class TaskService(private val captureTaskRepository: CaptureTaskRepository,
 
         return Optional.of(CaptureTaskDetails().apply {
             this.taskInfo = captureTask
-            this.bundling = CaptureTaskDetails.TaskBundleInfo(bundleService.hasBundleData(captureTask))
-            this.capturing = caterpillarService.getSpiderStatus(captureTask.id!!).orElse(null)
+            this.bundling = bundleService.getBundleInfo(captureTask)
+            this.taskThread = caterpillarService.getSpiderStatus(captureTask.id!!).orElse(null)
             this.importing = importService.getByTaskId(captureTask.id!!).orElse(null)
         })
     }
@@ -32,8 +32,8 @@ open class TaskService(private val captureTaskRepository: CaptureTaskRepository,
         return captureTaskRepository.findAll(pageable).map {
             CaptureTaskDetails().apply {
                 this.taskInfo = it
-                this.bundling = CaptureTaskDetails.TaskBundleInfo(bundleService.hasBundleData(it))
-                this.capturing = caterpillarService.getSpiderStatus(it.id!!).orElse(null)
+                this.bundling = bundleService.getBundleInfo(it)
+                this.taskThread = caterpillarService.getSpiderStatus(it.id!!).orElse(null)
                 this.importing = importService.getByTaskId(it.id!!).orElse(null)
             }
         }

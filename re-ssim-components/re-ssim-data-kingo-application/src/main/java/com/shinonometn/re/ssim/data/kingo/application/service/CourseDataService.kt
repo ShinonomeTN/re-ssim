@@ -10,18 +10,18 @@ import org.springframework.stereotype.Service
 
 @Service
 open class CourseDataService(private val courseRepository: CourseRepository,
-                        private val mongoTemplate: MongoTemplate) {
+                             private val mongoTemplate: MongoTemplate) {
 
     open fun saveCourseInfo(courseEntity: CourseEntity) {
         courseRepository.save(courseEntity)
     }
 
-    open fun deleteOtherVersions(currentVersion: Int): DeleteResult = mongoTemplate
+    open fun deleteOtherVersions(currentVersion: String): DeleteResult = mongoTemplate
             .remove(CourseEntity::class.java)
             .matching(Query.query(where("batchId").ne(currentVersion)))
             .all()
 
-    open fun deleteVersion(version: Int): DeleteResult = mongoTemplate
+    open fun deleteVersion(version: String): DeleteResult = mongoTemplate
             .remove(CourseEntity::class.java)
             .matching(Query.query(where("batchId").`is`(version)))
             .all()

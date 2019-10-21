@@ -32,7 +32,7 @@ db.courseEntity.aggregate([
     },
     {
         $match: {
-            term: "2017-2018学年第一学期"
+            term: "2014-2015学年第二学期"
         }
     },
     {$unwind: "$classType"},

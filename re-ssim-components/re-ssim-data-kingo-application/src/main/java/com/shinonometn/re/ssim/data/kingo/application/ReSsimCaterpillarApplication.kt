@@ -16,7 +16,6 @@ fun main(args: Array<String>) {
 }
 
 @SpringBootApplication
-@EnableWebMvc
 open class ReSsimCaterpillarApplication {
 
     @Value("\${application.data.path}")

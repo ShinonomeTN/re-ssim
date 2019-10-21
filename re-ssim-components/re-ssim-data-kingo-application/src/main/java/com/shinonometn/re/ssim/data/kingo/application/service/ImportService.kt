@@ -11,6 +11,7 @@ import com.shinonometn.re.ssim.data.kingo.application.repository.ImportTaskRepos
 import org.slf4j.LoggerFactory
 import org.springframework.core.task.TaskExecutor
 import org.springframework.stereotype.Service
+import org.springframework.transaction.support.TransactionTemplate
 import reactor.core.publisher.Flux
 import reactor.core.scheduler.Schedulers
 import java.io.File
@@ -19,12 +20,13 @@ import java.util.*
 import javax.transaction.Transactional
 
 @Service
-open class ImportService(private val captureTaskRepository: CaptureTaskRepository,
+class ImportService(private val captureTaskRepository: CaptureTaskRepository,
                          private val importTaskRepository: ImportTaskRepository,
                          private val fileService: CaterpillarFileService,
                          private val courseDataService: CourseDataService,
                          private val caterpillarService: CaterpillarService,
-                         private val taskExecutor: TaskExecutor) {
+                         private val taskExecutor: TaskExecutor,
+                        private val transactionTemplate: TransactionTemplate) {
 
     private val logger = LoggerFactory.getLogger(this.javaClass)
 
@@ -76,29 +78,35 @@ open class ImportService(private val captureTaskRepository: CaptureTaskRepositor
 
             e.onNext(ImportTaskEvent.init())
 
+            courseDataService.deleteVersion(captureTask.versionCode!!)
+
             Objects.requireNonNull<Array<File>>(dataFolder.listFiles()).forEach { file ->
                 courseDataService.saveCourseInfo(JSON.read(FileInputStream(file), CourseEntity::class.java).apply {
-                    batchId = taskId.toString()
+                    batchId = captureTask.versionCode!!
                 })
 
                 e.onNext(ImportTaskEvent.importing(file.name))
             }
-            logger.info("Batch data {} loading finished", taskId)
+            logger.info("Batch data {} loading finished", captureTask.versionCode)
 
             e.onNext(ImportTaskEvent.cleaning())
 
-            val deleteResult = courseDataService.deleteOtherVersions(currentVersion = taskId)
+            val deleteResult = courseDataService.deleteOtherVersions(currentVersion = captureTask.versionCode!!)
             logger.info("Other version deleted, total {} records, current version {}",
                     deleteResult.deletedCount,
-                    taskId
+                    captureTask.versionCode!!
             )
 
             e.onNext(ImportTaskEvent.finish())
             e.onComplete()
 
-        }.doOnError {
-            val deleteResult = courseDataService.deleteVersion(version = taskId)
-            logger.error("Failure import rolled back, total {} record(s)", deleteResult.deletedCount, it)
+        }.doOnError { e ->
+            val deleteResult = courseDataService.deleteVersion(version = captureTask.versionCode!!)
+            importTaskRepository.findByCaptureTaskId(taskId).ifPresent {
+                it.status = ImportTaskStatus.ERROR
+                importTaskRepository.save(it)
+            }
+            logger.error("Failure import rolled back, total {} record(s)", deleteResult.deletedCount, e)
         }.doOnComplete {
             importTaskRepository.findByCaptureTaskId(taskId).ifPresent {
                 it.status = ImportTaskStatus.FINISHED
@@ -111,8 +119,8 @@ open class ImportService(private val captureTaskRepository: CaptureTaskRepositor
         return captureTask
     }
 
-    @Transactional
-    open fun deleteByTask(id: Int) {
+
+    fun deleteByTask(id: Int): Unit = transactionTemplate.execute {
         importTaskRepository.deleteByCaptureTaskId(id)
     }
 }
