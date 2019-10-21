@@ -8,7 +8,7 @@
     <version>0.0.1-SNAPSHOT</version>
     <modules>
         <module>re-ssim-commons</module>
-        <module>re-ssim-caterpillar</module>
+<!--        <module>re-ssim-caterpillar</module>-->
         <!--<module>re-ssim-service</module>-->
         <!--<module>re-ssim-application</module>-->
         <module>re-ssim-components</module>

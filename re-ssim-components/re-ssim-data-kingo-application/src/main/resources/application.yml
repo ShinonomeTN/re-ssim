@@ -1,0 +1,36 @@
+spring:
+  jpa:
+    show-sql: true
+    database: mysql
+    hibernate:
+      ddl-auto: update
+  datasource:
+    driver-class-name: com.mysql.jdbc.Driver
+    url: jdbc:mysql:///db_ressim_caterpillar_kingo
+    username: app_ressim
+    password: 123456
+  redis:
+    host: localhost
+    port:  6379
+    database: 0
+  data:
+    mongodb:
+      database: db_ressim_data_kingo
+      host: 127.0.0.1
+      port: 27017
+
+
+application:
+  data:
+    path: ./data
+
+logging:
+  level:
+    root: info
+    caterpillar_profile_agent: debug
+    caterpillar_service: trace
+
+debug: false
+
+server:
+  port: 8081
