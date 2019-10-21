@@ -6,7 +6,7 @@ spring:
       ddl-auto: update
   datasource:
     driver-class-name: com.mysql.jdbc.Driver
-    url: jdbc:mysql:///db_ressim_caterpillar_kingo
+    url: jdbc:mysql:///db_ressim_caterpillar
     username: app_ressim
     password: 123456
   redis:

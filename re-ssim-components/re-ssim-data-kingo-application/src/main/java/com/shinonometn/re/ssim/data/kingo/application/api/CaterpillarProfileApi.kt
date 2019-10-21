@@ -3,10 +3,11 @@ package com.shinonometn.re.ssim.data.kingo.application.api
 import com.shinonometn.re.ssim.commons.BusinessException
 import com.shinonometn.re.ssim.commons.validation.ValidationMetaBuilder
 import com.shinonometn.re.ssim.commons.validation.Validator
+import com.shinonometn.re.ssim.data.kingo.application.agent.KingoCaterpillarProfileAgent
 import com.shinonometn.re.ssim.data.kingo.application.dto.CaterpillarSettingsDto
-import com.shinonometn.re.ssim.data.kingo.application.caterpillar.entity.CaterpillarSetting
-import com.shinonometn.re.ssim.data.kingo.application.caterpillar.service.CaterpillarProfileService
-import com.shinonometn.re.ssim.data.kingo.application.caterpillar.service.CaterpillarService
+import com.shinonometn.re.ssim.data.kingo.application.entity.CaterpillarSetting
+import com.shinonometn.re.ssim.data.kingo.application.service.CaterpillarSettingsService
+import com.shinonometn.re.ssim.data.kingo.application.service.CaterpillarService
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.web.PageableDefault
@@ -15,7 +16,7 @@ import java.util.*
 
 @RestController
 @RequestMapping("/profile")
-open class CaterpillarProfileApi(private val caterpillarProfileService: CaterpillarProfileService,
+open class CaterpillarProfileApi(private val caterpillarSettingsService: CaterpillarSettingsService,
                                  private val caterpillarService: CaterpillarService) {
 
     private val validator = Validator(ValidationMetaBuilder
@@ -32,7 +33,7 @@ open class CaterpillarProfileApi(private val caterpillarProfileService: Caterpil
      */
     @GetMapping
     open fun list(@PageableDefault pageable: Pageable): Page<CaterpillarSetting> {
-        return caterpillarProfileService.findAll(pageable)
+        return caterpillarSettingsService.findAll(pageable)
     }
 
     /**
@@ -40,10 +41,10 @@ open class CaterpillarProfileApi(private val caterpillarProfileService: Caterpil
      */
     @GetMapping("/{id}")
     open fun get(@PathVariable("id") id: Int): Optional<CaterpillarSettingsDto> =
-            caterpillarProfileService.findById(id).map {
+            caterpillarSettingsService.findById(id).map {
                 CaterpillarSettingsDto().apply {
                     this.caterpillarSetting = it
-                    this.agentProfileInfo = caterpillarService.requireAgentByProfile(it)
+                    this.agentProfileInfo = KingoCaterpillarProfileAgent(it.caterpillarProfile!!)
                 }
             }
 
@@ -53,12 +54,12 @@ open class CaterpillarProfileApi(private val caterpillarProfileService: Caterpil
     @PostMapping
     open fun save(@RequestBody caterpillarSetting: CaterpillarSetting): CaterpillarSetting {
         validator.validate(caterpillarSetting)
-        return caterpillarProfileService.save(caterpillarSetting)
+        return caterpillarSettingsService.save(caterpillarSetting)
     }
 
     @GetMapping("/{id}", params = ["validate"])
     open fun validate(@PathVariable("id") settingsId: Int): Boolean {
-        val caterpillarSetting = caterpillarProfileService
+        val caterpillarSetting = caterpillarSettingsService
                 .findById(settingsId)
                 .orElseThrow { BusinessException("setting_not_found") }
 
@@ -68,12 +69,12 @@ open class CaterpillarProfileApi(private val caterpillarProfileService: Caterpil
     @GetMapping(params = ["owner"])
     open fun findByUser(@RequestParam("owner") owner: String,
                         @PageableDefault pageable: Pageable): Page<CaterpillarSetting> {
-        return caterpillarProfileService.findAllByUser(owner, pageable)
+        return caterpillarSettingsService.findAllByUser(owner, pageable)
     }
 
     @GetMapping(params = ["owner", "profile_name"])
     open fun getByUserAndProfileName(@RequestParam("owner") owner: String,
                                      @RequestParam("profile_name") profileName: String): Optional<CaterpillarSetting> {
-        return caterpillarProfileService.findProfile(owner, profileName)
+        return caterpillarSettingsService.findProfile(owner, profileName)
     }
 }

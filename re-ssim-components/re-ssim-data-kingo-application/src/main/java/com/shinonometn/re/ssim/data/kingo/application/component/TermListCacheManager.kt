@@ -2,7 +2,7 @@ package com.shinonometn.re.ssim.data.kingo.application.component
 
 import com.fasterxml.jackson.core.type.TypeReference
 import com.shinonometn.re.ssim.commons.JSON
-import com.shinonometn.re.ssim.data.kingo.application.caterpillar.pojo.TermLabelItem
+import com.shinonometn.re.ssim.data.kingo.application.pojo.TermLabelItem
 import org.springframework.data.redis.connection.RedisConnectionFactory
 import org.springframework.data.redis.core.BoundValueOperations
 import org.springframework.data.redis.core.RedisTemplate
