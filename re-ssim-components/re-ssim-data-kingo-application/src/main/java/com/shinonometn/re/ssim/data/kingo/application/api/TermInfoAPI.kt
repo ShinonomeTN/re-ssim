@@ -10,25 +10,26 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/term")
 class TermInfoAPI(private val termDataService: TermDataService) {
 
-    /**
-     *
-     * List all terms
-     *
-     */
-    @GetMapping
-    fun list(): Collection<TermMeta>? {
-        TODO("Term storage and term detailed info")
-    }
-
-    /**
-     *
-     * Get school calendar
-     *
-     * */
-    @GetMapping("/{name}/calendar")
-    fun calendar(@PathVariable("name") term: String): Any? {
-        TODO("School calendar")
-    }
+//    /**
+//     *
+//     * List all terms
+//     *
+//     */
+//    @GetMapping
+//    fun list(): Collection<TermMeta>? {
+//        TODO("Term storage and term detailed info")
+//    }
+//
+//    /**
+//     *
+//     * Get school calendar
+//     *
+//     * */
+//    @GetMapping("/{name}/calendar")
+//    fun calendar(@PathVariable("name") term: String) = when (term) {
+//        "current" -> TODO("School calendar")
+//        else -> TODO("School calendar")
+//    }
 
     /**
      *

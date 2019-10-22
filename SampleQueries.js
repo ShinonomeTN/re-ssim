@@ -1,3 +1,25 @@
+db.courseEntity.aggregate([
+    {
+        $project: {
+            term: true,
+            code: true
+        }
+    },
+    {
+        $group: {
+            _id: '$code'
+        }
+    },
+    {
+        $group: {
+            _id: 1,
+            count: {
+                $sum: 1
+            }
+        }
+    }
+]);
+
 // Term infos
 db.courseEntity.aggregate([
     {
@@ -14,10 +36,10 @@ db.courseEntity.aggregate([
         }
     },
     {
-        $project : {
-            "name" : "$_id",
-            "courseCount" : "$courseCount",
-            "_id" : false
+        $project: {
+            "name": "$_id",
+            "courseCount": "$courseCount",
+            "_id": false
         }
     }
 ]);
@@ -53,7 +75,7 @@ db.courseEntity.aggregate([
     },
     {
         $match: {
-            term: "2017-2018学年第二学期"
+            term: "2018-2019学年第一学期"
         }
     },
     {$unwind: "$timePoint"},
@@ -93,7 +115,7 @@ db.courseEntity.aggregate([
             assessmentType: true
         }
     },
-    {$match: {term: "2017-2018学年第二学期"}},
+    {$match: {term: "2018-2019学年第一学期"}},
     {$unwind: "$lessons"},
     {
         $group: {
@@ -113,7 +135,7 @@ db.courseEntity.aggregate([
 // Teachers
 db.courseEntity.aggregate([
     {$project: {term: 1, "lessons.teacher": 1}},
-    {$match: {term: "2017-2018学年第二学期"}},
+    {$match: {term: "2018-2019学年第一学期"}},
     {$unwind: "$lessons"},
     {$group: {_id: null, teachers: {$addToSet: "$lessons.teacher"}}},
     {$project: {_id: false, teachers: true}}
@@ -221,16 +243,16 @@ db.courseEntity.aggregate([
     },
     {
         $match: {
-            term: "2017-2018学年第二学期", // Term limit
-            "lessons.classAttend": {$in: ["17软件技术2班"]}, // Class limit
-            "lessons.classType": {$nin: ["专业课/必修课"]} // Course type limit
+            term: "2017-2018学年第二学期",
+            "lessons.classAttend": {$in: ["17软件技术2班"]},
+            "lessons.classType": {$nin: ["专业课/必修课"]}
         }
     },
     {$unwind: "$lessons"},
     {$unwind: "$lessons.timePoint"},
     {
         $match: {
-            "lessons.timePoint.week": 19 // Week limit
+            "lessons.timePoint.week": 19
         }
     },
     {
@@ -265,7 +287,7 @@ db.courseEntity.aggregate([
             "lessons.teacher": true,
             "lessons.classAttend": true,
             "lessons.timePoint": true,
-            "lessons.classType":true
+            "lessons.classType": true
         }
     },
     {
@@ -273,17 +295,17 @@ db.courseEntity.aggregate([
             term: "2018-2019学年第一学期"
         }
     },
-    { $unwind: "$lessons"},
-    { $unwind : "$lessons.timePoint" },
+    {$unwind: "$lessons"},
+    {$unwind: "$lessons.timePoint"},
 
     {
-        $group:{
+        $group: {
             _id: "$lessons.teacher",
-            "lessons": { $sum: 1}
+            "lessons": {$sum: 1}
         }
     },
     {
-        $sort : {
+        $sort: {
             lessons: -1
         }
     }
@@ -302,28 +324,28 @@ db.courseEntity.aggregate([
             "lessons.teacher": true,
             "lessons.classAttend": true,
             "lessons.timePoint": true,
-            "lessons.classType":true
+            "lessons.classType": true
         }
     },
     {
         $match: {
             term: "2018-2019学年第一学期",
             unit: "电子信息工程学院",
-            "lessons.classType" : { $in : ["专业基础课/必修课", "双创课/限选课", "专业课/必修课","专业课/限选课"]},
-            "lessons.classAttend": { $in : [/\d{2,4}软件技术.+/] }
+            "lessons.classType": {$in: ["专业基础课/必修课", "双创课/限选课", "专业课/必修课", "专业课/限选课"]},
+            "lessons.classAttend": {$in: [/\d{2,4}软件技术.+/]}
         }
     },
-    { $unwind: "$lessons"},
+    {$unwind: "$lessons"},
     {
-        $group:{
+        $group: {
             _id: null,
-            "teachers": { $addToSet : "$lessons.teacher"}
+            "teachers": {$addToSet: "$lessons.teacher"}
         }
     },
 
     {
         $project: {
-            _id:0
+            _id: 0
         }
     }
 ]);

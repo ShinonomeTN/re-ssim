@@ -12,6 +12,12 @@ import java.util.Optional.ofNullable
 @Service
 class TermDataService(private val courseDataService: CourseDataService) {
 
+    /*
+    *
+    *
+    *
+    * */
+
     fun listAllCoursesOfTerm(termName: String, version: String): Optional<List<Document>> = ofNullable(courseDataService.query(newAggregation(
 
             project("term", "code", "name", "unit", "lessons", "assessmentType", "batchId")
@@ -87,5 +93,12 @@ class TermDataService(private val courseDataService: CourseDataService) {
             project().andExclude("_id"))
 
     ).uniqueMappedResult).map { Range.between<Int>(it.getInteger("min"), it.getInteger("max")) }
+
+    fun countTermCourses(termCode: String, dataVersion: String): Optional<Int> = ofNullable(courseDataService.query(newAggregation(
+            project("term", "code"),
+            match(where("code").`is`(termCode).and("batchId").`is`(dataVersion)),
+            group("code"),
+            group().count().`as`("count")
+    )).uniqueMappedResult).map { it.getInteger("count") }
 
 }

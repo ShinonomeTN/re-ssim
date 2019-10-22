@@ -6,6 +6,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.context.annotation.Bean
 import org.springframework.core.task.TaskExecutor
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing
+import org.springframework.data.redis.connection.RedisConnectionFactory
+import org.springframework.integration.redis.util.RedisLockRegistry
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
 import org.springframework.web.servlet.config.annotation.EnableWebMvc
 
@@ -33,5 +35,10 @@ open class ReSsimCaterpillarApplication {
             throw RuntimeException("Could not create folder " + file.absolutePath + ".")
 
         return file
+    }
+
+    @Bean
+    open fun redisLockRegistry(redisConnectionFactory: RedisConnectionFactory): RedisLockRegistry {
+        return RedisLockRegistry(redisConnectionFactory, "ressim_data_kingo_locks")
     }
 }

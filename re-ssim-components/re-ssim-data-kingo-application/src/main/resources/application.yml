@@ -29,6 +29,7 @@ logging:
     root: info
     caterpillar_profile_agent: debug
     caterpillar_service: trace
+    ressim.kingo.* : debug
 
 debug: false
 

@@ -5,11 +5,9 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.shinonometn.re.ssim.commons.BusinessException
 import com.shinonometn.re.ssim.commons.JSON
+import com.shinonometn.re.ssim.data.kingo.application.api.CalendarInfo
 import com.shinonometn.re.ssim.data.kingo.application.base.CaptureTaskStage
-import com.shinonometn.re.ssim.data.kingo.application.base.kingo.capture.CourseDetailsPageProcessor
-import com.shinonometn.re.ssim.data.kingo.application.base.kingo.capture.CoursesListPageProcessor
-import com.shinonometn.re.ssim.data.kingo.application.base.kingo.capture.LoginExecutePageProcessor
-import com.shinonometn.re.ssim.data.kingo.application.base.kingo.capture.LoginPreparePageProcessor
+import com.shinonometn.re.ssim.data.kingo.application.base.kingo.capture.*
 import com.shinonometn.re.ssim.data.kingo.application.pojo.CourseLabelItem
 import com.shinonometn.re.ssim.data.kingo.application.pojo.TermLabelItem
 import com.shinonometn.re.ssim.service.caterpillar.kingo.KingoUrls
@@ -118,6 +116,28 @@ data class KingoCaterpillarProfileAgent(private val map: MutableMap<String, Any?
         val site = createSite()
         val contextData = prepareLoginToKingo(site)
         doLoginToKingo(site, contextData)
+    }
+
+    fun fetchCalendarForTerm(termCode: String): List<CalendarInfo> {
+        val calendarQueryRequest = Request(KingoUrls.calendarPage)
+        calendarQueryRequest.method = HttpConstant.Method.POST
+        val requestContent = HashMap<String, Any>()
+        requestContent["sel_xnxq"] = termCode
+        calendarQueryRequest.addHeader("Content-Type", "application/x-www-form-urlencoded; charset=GBK")
+        calendarQueryRequest.requestBody = HttpRequestBody.form(requestContent, "gbk")
+
+        val resultItems = LinkedList<CalendarInfo>()
+
+        Spider.create(CalendarPageProcessor(createSite()))
+                .addRequest(calendarQueryRequest)
+                .addPipeline { r, t ->
+                    resultItems.addAll(CalendarPageProcessor.getCalendarRangeInfo(r).map {
+                        CalendarInfo(it.termName, it.startDate, it.endDate)
+                    }.toList())
+                }
+                .run()
+
+        return resultItems
     }
 
     /*
