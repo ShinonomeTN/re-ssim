@@ -17,16 +17,15 @@ import reactor.core.scheduler.Schedulers
 import java.io.File
 import java.io.FileInputStream
 import java.util.*
-import javax.transaction.Transactional
 
 @Service
 class ImportService(private val captureTaskRepository: CaptureTaskRepository,
-                         private val importTaskRepository: ImportTaskRepository,
-                         private val fileService: CaterpillarFileService,
-                         private val courseDataService: CourseDataService,
-                         private val caterpillarService: CaterpillarService,
-                         private val taskExecutor: TaskExecutor,
-                        private val transactionTemplate: TransactionTemplate) {
+                    private val importTaskRepository: ImportTaskRepository,
+                    private val fileService: CaterpillarFileService,
+                    private val courseDataService: CourseDataService,
+                    private val caterpillarService: CaterpillarService,
+                    private val taskExecutor: TaskExecutor,
+                    private val transactionTemplate: TransactionTemplate) {
 
     private val logger = LoggerFactory.getLogger(this.javaClass)
 
@@ -34,18 +33,16 @@ class ImportService(private val captureTaskRepository: CaptureTaskRepository,
         return importTaskRepository.findByCaptureTaskId(id)
     }
 
-    data class ImportTaskEvent(val status: Status, val message: String) {
+    data class ImportTaskEvent(val taskId: Int, val status: Status, val message: String) {
         enum class Status {
             INITIALIZING, IMPORTING, CLEANING, FINISH
         }
-
-        companion object {
-            fun init() = ImportTaskEvent(Status.INITIALIZING, "initialize")
-            fun importing(message: String) = ImportTaskEvent(Status.IMPORTING, message)
-            fun finish() = ImportTaskEvent(Status.FINISH, "finished")
-            fun cleaning() = ImportTaskEvent(Status.CLEANING, "cleaning")
-        }
     }
+
+    private fun ImportTask.emitInitMessage() = ImportTaskEvent(this.captureTaskId!!, ImportTaskEvent.Status.INITIALIZING, "initialize")
+    private fun ImportTask.emitImportingMessage(message: String) = ImportTaskEvent(this.captureTaskId!!, ImportTaskEvent.Status.IMPORTING, message)
+    private fun ImportTask.emitFinishMessage() = ImportTaskEvent(this.captureTaskId!!, ImportTaskEvent.Status.FINISH, "finished")
+    private fun ImportTask.emitCleaningMessage() = ImportTaskEvent(this.captureTaskId!!, ImportTaskEvent.Status.CLEANING, "cleaning")
 
     /**
      * Start importing data to database
@@ -66,7 +63,7 @@ class ImportService(private val captureTaskRepository: CaptureTaskRepository,
 
         if (!dataFolder.exists()) throw BusinessException("task_has_no_data")
 
-        importTaskRepository.save(getByTaskId(taskId)
+        val importTask = importTaskRepository.save(getByTaskId(taskId)
                 .orElse(ImportTask())
                 .apply {
                     dataPath = dataFolder.path
@@ -76,7 +73,7 @@ class ImportService(private val captureTaskRepository: CaptureTaskRepository,
 
         Flux.from<ImportTaskEvent> { e ->
 
-            e.onNext(ImportTaskEvent.init())
+            e.onNext(importTask.emitInitMessage())
 
             courseDataService.deleteVersion(captureTask.versionCode!!)
 
@@ -85,11 +82,11 @@ class ImportService(private val captureTaskRepository: CaptureTaskRepository,
                     batchId = captureTask.versionCode!!
                 })
 
-                e.onNext(ImportTaskEvent.importing(file.name))
+                e.onNext(importTask.emitImportingMessage(file.name))
             }
             logger.info("Batch data {} loading finished", captureTask.versionCode)
 
-            e.onNext(ImportTaskEvent.cleaning())
+            e.onNext(importTask.emitCleaningMessage())
 
             val deleteResult = courseDataService.deleteOtherVersions(currentVersion = captureTask.versionCode!!)
             logger.info("Other version deleted, total {} records, current version {}",
@@ -97,7 +94,7 @@ class ImportService(private val captureTaskRepository: CaptureTaskRepository,
                     captureTask.versionCode!!
             )
 
-            e.onNext(ImportTaskEvent.finish())
+            e.onNext(importTask.emitFinishMessage())
             e.onComplete()
 
         }.doOnError { e ->
@@ -119,8 +116,7 @@ class ImportService(private val captureTaskRepository: CaptureTaskRepository,
         return captureTask
     }
 
-
-    fun deleteByTask(id: Int): Unit = transactionTemplate.execute {
+    fun deleteByTask(id: Int): Unit? = transactionTemplate.execute {
         importTaskRepository.deleteByCaptureTaskId(id)
     }
 }
