@@ -6,4 +6,9 @@ class ImportTaskEvent(source: Any, val type: EventType, val taskId: Int) : Appli
     enum class EventType {
         START, FINISHED, ERROR
     }
+
+    override fun toString(): String {
+        return "ImportTaskEvent(type=$type, taskId=$taskId)"
+    }
+
 }

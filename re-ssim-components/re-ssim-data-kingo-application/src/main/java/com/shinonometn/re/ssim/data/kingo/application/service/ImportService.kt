@@ -87,7 +87,7 @@ class ImportService(private val captureTaskRepository: CaptureTaskRepository,
         if (!dataFolder.exists()) throw BusinessException("task_has_no_data")
 
         // Lock the task
-        val taskLock = obtainTermDataLock(captureTask)
+//        val taskLock = obtainTermDataLock(captureTask)
 
         val importTask = importTaskRepository.save(getByTaskId(taskId)
                 .orElse(ImportTask())
@@ -140,7 +140,7 @@ class ImportService(private val captureTaskRepository: CaptureTaskRepository,
             }
             applicationEventPublisher.publishEvent(ImportTaskEvent(this, ImportTaskEvent.EventType.FINISHED, taskId))
         }.doOnTerminate {
-            taskLock.unlock()
+//            taskLock.unlock()
         }.subscribeOn(Schedulers.fromExecutor(taskExecutor)).subscribe {
             logger.debug("Import task $taskId @${it.status} : ${it.message}")
         }
@@ -157,9 +157,9 @@ class ImportService(private val captureTaskRepository: CaptureTaskRepository,
     private fun obtainTermDataLock(captureTask: CaptureTask): Lock {
         val taskLock = redisLockRegistry.obtain("${CaptureTask::class.simpleName}:${captureTask.termCode!!}")
         try {
-            if (!taskLock.tryLock(500, TimeUnit.MILLISECONDS)) throw Exception()
+            if (!taskLock.tryLock(500, TimeUnit.MILLISECONDS)) throw Exception("lock_failed")
         } catch (e: Exception) {
-            logger.error("Could not obtain lock for term ${captureTask.termCode!!}")
+            logger.error("Could not obtain lock for term ${captureTask.termCode!!}", e)
             throw BusinessException("task_lock_obtain_failed")
         }
 

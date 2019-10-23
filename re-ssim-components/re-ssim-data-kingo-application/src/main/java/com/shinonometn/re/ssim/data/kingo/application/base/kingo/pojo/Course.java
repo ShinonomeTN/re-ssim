@@ -4,6 +4,7 @@ import java.util.List;
 
 public class Course {
     private Integer id; //服务器上的ID
+    private String termCode; //
     private String term;//学期
     private String name;//课程名称
     private String code;//课程代号
@@ -18,6 +19,14 @@ public class Course {
 
     public void setId(Integer id) {
         this.id = id;
+    }
+
+    public String getTermCode() {
+        return termCode;
+    }
+
+    public void setTermCode(String termCode) {
+        this.termCode = termCode;
     }
 
     public String getName() {

@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.shinonometn.re.ssim.commons.BusinessException
 import com.shinonometn.re.ssim.commons.JSON
-import com.shinonometn.re.ssim.data.kingo.application.api.CalendarInfo
+import com.shinonometn.re.ssim.data.kingo.application.base.CalendarInfo
 import com.shinonometn.re.ssim.data.kingo.application.base.CaptureTaskStage
 import com.shinonometn.re.ssim.data.kingo.application.base.kingo.capture.*
 import com.shinonometn.re.ssim.data.kingo.application.pojo.CourseLabelItem
@@ -92,6 +92,7 @@ data class KingoCaterpillarProfileAgent(private val map: MutableMap<String, Any?
                 .addPipeline { resultItems, _ ->
                     try {
                         val course = CourseDetailsPageProcessor.getSubject(resultItems)
+                        course.termCode = termCode
                         JSON.write(FileOutputStream(File(storageFolder, "${Objects.requireNonNull(course.code)}.json")), course)
                         logger.debug("downloaded: [${course.code}] ${course.name}")
                     } catch (e: Exception) {

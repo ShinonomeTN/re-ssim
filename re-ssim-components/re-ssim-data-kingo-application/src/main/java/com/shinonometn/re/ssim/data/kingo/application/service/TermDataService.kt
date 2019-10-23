@@ -29,13 +29,14 @@ class TermDataService(private val courseDataService: CourseDataService) {
 
     )).mappedResults)
 
-    fun listAllCourseTypesOfTerm(termName: String, version: String): Optional<List<String>> = ofNullable(courseDataService.query(newAggregation(
-            project("term", "batchId").and("lessons.classType").`as`("classType"),
-            match(where("term").`is`(termName).and("batchId").`is`(version)),
+    fun listAllCourseTypesOfTerm(termCode: String, version: String): Optional<List<String>> = ofNullable(courseDataService.query(newAggregation(
+            project("termCode", "batchId").and("lessons.classType").`as`("classType"),
+            match(where("termCode").`is`(termCode).and("batchId").`is`(version)),
             unwind("classType"),
             group().addToSet("classType").`as`("classTypes"),
             project("classTypes")
                     .andExclude("_id")
+
     )).uniqueMappedResult).map { it.get("classTypes", ArrayList<String>()) }
 
     fun listClassesOfTerm(termName: String, version: String): Optional<List<String>> = ofNullable(courseDataService.query(
@@ -77,11 +78,11 @@ class TermDataService(private val courseDataService: CourseDataService) {
                     .andExclude("_id")
     )).uniqueMappedResult).map { it.get("position", ArrayList<String>()) }
 
-    fun getWeekRangeOfTerm(termName: String, version: String): Optional<Range<Int>> = ofNullable(courseDataService.query(newAggregation(
+    fun getWeekRangeOfTerm(termCode: String, version: String): Optional<Range<Int>> = ofNullable(courseDataService.query(newAggregation(
 
-            project("term", "batchId").and("lessons.timePoint").`as`("timePoint"),
+            project("termCode", "batchId").and("lessons.timePoint").`as`("timePoint"),
 
-            match(where("term").`is`(termName).and("batchId").`is`(version)),
+            match(where("termCode").`is`(termCode).and("batchId").`is`(version)),
 
             unwind("timePoint"),
             unwind("timePoint"),
@@ -95,10 +96,10 @@ class TermDataService(private val courseDataService: CourseDataService) {
     ).uniqueMappedResult).map { Range.between<Int>(it.getInteger("min"), it.getInteger("max")) }
 
     fun countTermCourses(termCode: String, dataVersion: String): Optional<Int> = ofNullable(courseDataService.query(newAggregation(
-            project("term", "code"),
-            match(where("code").`is`(termCode).and("batchId").`is`(dataVersion)),
+            project("code", "termCode", "batchId"),
+            match(where("termCode").`is`(termCode).and("batchId").`is`(dataVersion)),
             group("code"),
-            group().count().`as`("count")
+            count().`as`("count")
     )).uniqueMappedResult).map { it.getInteger("count") }
 
 }

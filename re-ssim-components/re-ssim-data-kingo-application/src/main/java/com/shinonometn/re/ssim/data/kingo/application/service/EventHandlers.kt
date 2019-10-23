@@ -31,18 +31,18 @@ class ImportTaskEventHandler(private val termManageService: TermManageService,
             logger.debug("Capture task info broken. {}", event)
         }
 
-        val lock = redisLockRegistry.obtain("${TermInfo::class.simpleName}:${captureTask.termCode}")
-        try {
-            if (!lock.tryLock(500, TimeUnit.MILLISECONDS)) throw Exception()
-        } catch (e: Exception) {
-            logger.error("Could not get lock for term ${captureTask.termCode}")
-            return
-        }
+//        val lock = redisLockRegistry.obtain("${TermInfo::class.simpleName}:${captureTask.termCode}")
+//        try {
+//            if (!lock.tryLock(1, TimeUnit.SECONDS)) throw Exception("lock_failed")
+//        } catch (e: Exception) {
+//            logger.error("Could not get lock for term ${captureTask.termCode}", e)
+//            return
+//        }
 
         try {
             termManageService.refreshTermInfo(captureTask.termCode!!, captureTask.termName!!, captureTask.versionCode!!)
         }finally {
-            lock.unlock()
+//            lock.unlock()
         }
     }
 

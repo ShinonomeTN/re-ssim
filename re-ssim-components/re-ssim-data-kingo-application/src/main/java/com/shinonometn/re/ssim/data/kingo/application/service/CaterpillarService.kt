@@ -24,6 +24,18 @@ open class CaterpillarService(private val fileService: CaterpillarFileService,
 
     private var cachedTermLabelItemList: Collection<TermLabelItem> = termListCacheManager.get()
 
+    fun getAgent(caterpillarSetting: CaterpillarSetting): KingoCaterpillarProfileAgent {
+        return KingoCaterpillarProfileAgent(caterpillarSetting.caterpillarProfile!!).apply {
+            bindSpiderMonitor(spiderMonitor)
+        }
+    }
+
+    fun getAgent(caterpillarProfile: MutableMap<String, Any?>): KingoCaterpillarProfileAgent {
+        return KingoCaterpillarProfileAgent(caterpillarProfile).apply {
+            bindSpiderMonitor(spiderMonitor)
+        }
+    }
+
     /*
 
         Status
@@ -43,7 +55,7 @@ open class CaterpillarService(private val fileService: CaterpillarFileService,
      * @return a map, term code as key, term name as value
      */
     open fun captureTermListFromRemote(caterpillarSetting: CaterpillarSetting): Collection<TermLabelItem> {
-        cachedTermLabelItemList = KingoCaterpillarProfileAgent(caterpillarSetting.caterpillarProfile!!).fetchTerms()
+        cachedTermLabelItemList = getAgent(caterpillarSetting).fetchTerms()
         termListCacheManager.save(cachedTermLabelItemList)
         return cachedTermLabelItemList
     }
@@ -73,7 +85,7 @@ open class CaterpillarService(private val fileService: CaterpillarFileService,
     /**
      * Resume a stopped task
      */
-    open fun resumeTask(id : Int): SpiderStatus {
+    open fun resumeTask(id: Int): SpiderStatus {
 
         val spiderStatus = spiderMonitor.getSpiderStatus()[id.toString()]
                 ?: throw BusinessException("task_have_not_initialized")
@@ -110,7 +122,7 @@ open class CaterpillarService(private val fileService: CaterpillarFileService,
         val taskUUID = taskId.toString()
         val termCode = captureTask.termCode ?: throw IllegalArgumentException("term_code_should_not_be_null")
 
-        KingoCaterpillarProfileAgent(captureTask.captureProfile ?: throw BusinessException("caterpillar_profile_empty"))
+        getAgent(captureTask.captureProfile ?: throw BusinessException("caterpillar_profile_empty"))
                 .fetchCoursesData(taskUUID, termCode, fileService.dataFolderOfTask(taskId))
                 .subscribeOn(Schedulers.fromExecutor(taskExecutor))
                 .doOnError { error ->
@@ -132,7 +144,7 @@ open class CaterpillarService(private val fileService: CaterpillarFileService,
      */
     open fun validateSettings(caterpillarSetting: CaterpillarSetting): Boolean {
         return try {
-            KingoCaterpillarProfileAgent(caterpillarSetting.caterpillarProfile!!).validateSetting()
+            getAgent(caterpillarSetting).validateSetting()
             true
         } catch (e: Exception) {
             false

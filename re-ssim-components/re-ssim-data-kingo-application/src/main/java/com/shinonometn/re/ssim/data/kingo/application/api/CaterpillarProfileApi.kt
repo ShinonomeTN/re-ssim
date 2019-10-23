@@ -3,11 +3,10 @@ package com.shinonometn.re.ssim.data.kingo.application.api
 import com.shinonometn.re.ssim.commons.BusinessException
 import com.shinonometn.re.ssim.commons.validation.ValidationMetaBuilder
 import com.shinonometn.re.ssim.commons.validation.Validator
-import com.shinonometn.re.ssim.data.kingo.application.agent.KingoCaterpillarProfileAgent
 import com.shinonometn.re.ssim.data.kingo.application.dto.CaterpillarSettingsDto
 import com.shinonometn.re.ssim.data.kingo.application.entity.CaterpillarSetting
-import com.shinonometn.re.ssim.data.kingo.application.service.CaterpillarSettingsService
 import com.shinonometn.re.ssim.data.kingo.application.service.CaterpillarService
+import com.shinonometn.re.ssim.data.kingo.application.service.CaterpillarSettingsService
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.web.PageableDefault
@@ -44,7 +43,7 @@ open class CaterpillarProfileApi(private val caterpillarSettingsService: Caterpi
             caterpillarSettingsService.findById(id).map {
                 CaterpillarSettingsDto().apply {
                     this.caterpillarSetting = it
-                    this.agentProfileInfo = KingoCaterpillarProfileAgent(it.caterpillarProfile!!)
+                    this.agentProfileInfo = caterpillarService.getAgent(it)
                 }
             }
 

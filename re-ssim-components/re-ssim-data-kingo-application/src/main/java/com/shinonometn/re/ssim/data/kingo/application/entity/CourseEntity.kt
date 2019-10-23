@@ -13,6 +13,7 @@ open class CourseEntity : Serializable {
     @Id
     var id: String? = null
     var term: String? = null//学期
+    var termCode: String? = null
     var name: String? = null//课程名称
     var code: String? = null//课程代号
     var unit: String? = null//承担单位
