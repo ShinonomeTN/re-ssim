@@ -1,0 +1,10 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+info:
+  application:
+    data:
+      path: ./data
+
+debug: false

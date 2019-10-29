@@ -19,10 +19,10 @@ spring:
       host: 127.0.0.1
       port: 27017
 
-
-application:
-  data:
-    path: ./data
+info:
+  application:
+    data:
+      path: ./data
 
 logging:
   level:

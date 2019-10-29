@@ -5,12 +5,9 @@ import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.context.annotation.Bean
 import org.springframework.core.task.TaskExecutor
-import org.springframework.data.jpa.repository.config.EnableJpaAuditing
 import org.springframework.data.redis.connection.RedisConnectionFactory
 import org.springframework.integration.redis.util.RedisLockRegistry
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
-import org.springframework.web.servlet.config.annotation.EnableWebMvc
-
 import java.io.File
 
 fun main(args: Array<String>) {
@@ -20,7 +17,7 @@ fun main(args: Array<String>) {
 @SpringBootApplication
 open class ReSsimCaterpillarApplication {
 
-    @Value("\${application.data.path}")
+    @Value("\${info.application.data.path}")
     private val rootFolderPath: String? = null
 
     @Bean

@@ -66,8 +66,8 @@ open class CaterpillarProfileApi(private val caterpillarSettingsService: Caterpi
     }
 
     @GetMapping(params = ["owner"])
-    open fun findByUser(@RequestParam("owner") owner: String,
-                        @PageableDefault pageable: Pageable): Page<CaterpillarSetting> {
+    open fun findByUser(@PageableDefault pageable: Pageable,
+                        @RequestParam("owner") owner: String): Page<CaterpillarSetting> {
         return caterpillarSettingsService.findAllByUser(owner, pageable)
     }
 
