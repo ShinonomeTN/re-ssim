@@ -42,23 +42,6 @@ open class CourseDataService(private val courseRepository: CourseRepository,
         return mongoTemplate.aggregate(aggregation, mongoTemplate.getCollectionName(CourseEntity::class.java), Document::class.java)
     }
 
-//    fun queryWeeksOfClassByTerm(term: String, clazz: String): Optional<ArrayList<String>> = ofNullable(query(newAggregation(
-//
-//            project("term", "code", "name", "lessons"),
-//
-//            unwind("lessons"),
-//            unwind("lessons.timePoint"),
-//
-//            match(where("term").`is`(term)
-//                    .and("lessons.classAttend").`in`(clazz)),
-//
-//            group().addToSet("lessons.timePoint.week").`as`("weeks"),
-//
-//            project("weeks").andExclude("_id")
-//
-//    )).uniqueMappedResult).map { it.get("weeks", ArrayList<String>()) }
-
-
     fun queryWeeksOfClassByTerm(termCode: String, clazz: String, version: String): Optional<ArrayList<String>> = ofNullable(query(newAggregation(
 
             project("termCode", "code", "name", "lessons", "batchId"),
