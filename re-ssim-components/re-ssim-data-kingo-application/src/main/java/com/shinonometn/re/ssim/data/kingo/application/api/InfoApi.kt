@@ -14,12 +14,12 @@ import org.springframework.web.bind.annotation.RestController
 class InfoApi(private val caterpillarService: CaterpillarService,
               private val caterpillarSettingsService: CaterpillarSettingsService) {
 
-    @GetMapping("/term")
+    @GetMapping("/remote_term")
     fun listAllCachedTerms(): Collection<TermLabelItem> {
         return caterpillarService.cachedTermItemList()
     }
 
-    @GetMapping("/term", params = ["refresh", "profile_id"])
+    @GetMapping("/remote_term", params = ["refresh", "profile_id"])
     fun updateCachedTermList(@RequestParam("profile_id") caterpillarProfileId: Int): Collection<TermLabelItem> {
         val caterpillarProfile = caterpillarSettingsService
                 .findById(caterpillarProfileId)

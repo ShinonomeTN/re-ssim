@@ -36,4 +36,8 @@ class TermInfo {
     var createDate: Date? = null
     @Temporal(TemporalType.TIMESTAMP)
     var updateDate: Date? = null
+
+    override fun toString(): String {
+        return "TermInfo(id=$id, identity=$identity, name=$name, courseCount=$courseCount, courseTypes=$courseTypes, minWeek=$minWeek, maxWeek=$maxWeek, startDate=$startDate, endDate=$endDate, dataVersion=$dataVersion, createDate=$createDate, updateDate=$updateDate)"
+    }
 }

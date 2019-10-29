@@ -12,6 +12,7 @@ import java.util.Optional.ofNullable
 @RequestMapping("/term")
 class CourseQueryAPI(@Autowired private val courseDataService: CourseDataService) {
 
+
     /**
      *
      * Query weeks of a class that has lessons
@@ -19,8 +20,10 @@ class CourseQueryAPI(@Autowired private val courseDataService: CourseDataService
      */
     @GetMapping("/{term}/class/{clazzName}/week")
     fun showClassTermWeeks(@PathVariable("term") term: String,
-                           @PathVariable("clazzName") clazz: String) =
-            courseDataService.queryWeeksOfClassByTerm(term, clazz)
+                           @PathVariable("clazzName") clazz: String,
+                           @RequestParam("data_version") dataVersion: String) =
+
+            courseDataService.queryWeeksOfClassByTerm(term, clazz, dataVersion)
 
     /**
      *
@@ -32,13 +35,16 @@ class CourseQueryAPI(@Autowired private val courseDataService: CourseDataService
     fun queryClassWeekCourses(@PathVariable("term") term: String,
                               @PathVariable("class") clazz: String,
                               @RequestParam("week", required = true) week: Int,
-                              @RequestParam("excludedType", required = false) excludedType: List<String>?) = ofNullable(courseDataService.query(newAggregation(
+                              @RequestParam("excludedType", required = false) excludedType: List<String>?,
+                              @RequestParam("data_version") dataVersion: String
+    ) = ofNullable(courseDataService.query(newAggregation(
 
             // Project necessary fields
-            project("term", "code", "name", "lessons"),
+            project("termCode", "code", "name", "lessons", "batchId"),
 
             // Find matched lesson
-            match(where("term").`is`(term)
+            match(where("termCode").`is`(term)
+                    .and("batchId").`is`(dataVersion)
                     .and("lessons.classAttend").`in`(clazz).also {
 
                         // If exclude list specified
@@ -82,11 +88,13 @@ class CourseQueryAPI(@Autowired private val courseDataService: CourseDataService
      * Query weeks that teacher has lessons
      *
      */
-    @GetMapping("/{term}/teacher/{teacher}/weeks")
+    @GetMapping("/{term}/teacher/{teacher}/week")
     fun showTeacherTermWeeks(@PathVariable("term") term: String,
-                             @PathVariable("teacher") teacher: String) =
+                             @PathVariable("teacher") teacher: String,
+                             @RequestParam("data_version") dataVersion: String
+    ) =
 
-            courseDataService.queryWeeksOfTeacherByTerm(term, teacher)
+            courseDataService.queryWeeksOfTeacherByTerm(term, teacher, dataVersion)
 
     /**
      *
@@ -96,14 +104,17 @@ class CourseQueryAPI(@Autowired private val courseDataService: CourseDataService
     @GetMapping("/{term}/teacher/{teacher}/course")
     fun queryTeacherWeekCourses(@PathVariable("term") term: String,
                                 @PathVariable("teacher") teacher: String,
-                                @RequestParam("week") week: Int) = ofNullable(courseDataService.query(newAggregation(
+                                @RequestParam("week") week: Int,
+                                @RequestParam("data_version") dataVersion: String
+    ) = ofNullable(courseDataService.query(newAggregation(
 
             // Project necessary fields
-            project("term", "code", "name", "lessons"),
+            project("termCode", "code", "name", "lessons", "batchId"),
 
             // Find matched lesson
-            match(where("term").`is`(term)
-                    .and("lessons.teacher").`in`(teacher)),
+            match(where("termCode").`is`(term)
+                    .and("lessons.teacher").`in`(teacher)
+                    .and("batchId").`is`(dataVersion)),
 
             // Explain records
             unwind("lessons"),

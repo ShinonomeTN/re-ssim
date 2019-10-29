@@ -8,6 +8,7 @@ import org.springframework.data.mongodb.core.query.Criteria.where
 import org.springframework.stereotype.Service
 import java.util.*
 import java.util.Optional.ofNullable
+import kotlin.collections.ArrayList
 
 @Service
 class TermDataService(private val courseDataService: CourseDataService) {
@@ -18,11 +19,11 @@ class TermDataService(private val courseDataService: CourseDataService) {
     *
     * */
 
-    fun listAllCoursesOfTerm(termName: String, version: String): Optional<List<Document>> = ofNullable(courseDataService.query(newAggregation(
+    fun listAllCoursesOfTerm(termCode: String, version: String): Optional<List<Document>> = ofNullable(courseDataService.query(newAggregation(
 
-            project("term", "code", "name", "unit", "lessons", "assessmentType", "batchId")
+            project("termCode", "code", "name", "unit", "lessons", "assessmentType", "batchId")
                     .and("lessons.classType").`as`("classType"),
-            match(Criteria.where("term").`is`(termName).and("batchId").`is`(version)),
+            match(Criteria.where("termCode").`is`(termCode).and("batchId").`is`(version)),
             unwind("lessons"),
             unwind("classType"),
             group("code", "name", "unit", "classType", "assessmentType")
@@ -39,11 +40,11 @@ class TermDataService(private val courseDataService: CourseDataService) {
 
     )).uniqueMappedResult).map { it.get("classTypes", ArrayList<String>()) }
 
-    fun listClassesOfTerm(termName: String, version: String): Optional<List<String>> = ofNullable(courseDataService.query(
-            newAggregation(project("term", "batchId")
+    fun listClassesOfTerm(termCode: String, version: String): Optional<List<String>> = ofNullable(courseDataService.query(
+            newAggregation(project("termCode", "batchId")
                     .and("lessons.classAttend").`as`("classAttend"),
 
-                    match(where("term").`is`(termName)
+                    match(where("termCode").`is`(termCode)
                             .and("batchId").`is`(version)),
 
                     unwind("classAttend"),
@@ -54,11 +55,11 @@ class TermDataService(private val courseDataService: CourseDataService) {
                     project().andExclude("_id"))
     ).uniqueMappedResult).map { it.get("classes", ArrayList<String>()) }
 
-    fun listTeachersOfTerm(termName: String, version: String): Optional<List<String>> = ofNullable(courseDataService.query(newAggregation(
+    fun listTeachersOfTerm(termCode: String, version: String): Optional<List<String>> = ofNullable(courseDataService.query(newAggregation(
 
-            project("term", "batchId").and("lessons.teacher").`as`("teachers"),
+            project("termCode", "batchId").and("lessons.teacher").`as`("teachers"),
 
-            match(where("term").`is`(termName)
+            match(where("termCode").`is`(termCode)
                     .and("batchId").`is`(version)),
 
             unwind("teachers"),
@@ -69,9 +70,9 @@ class TermDataService(private val courseDataService: CourseDataService) {
 
     ).uniqueMappedResult).map { it.get("teachers", ArrayList<String>()) }
 
-    fun listClassroomsOfTerm(termName: String, version: String): Optional<List<String>> = ofNullable(courseDataService.query(newAggregation(
-            project("term", "batchId").and("lessons.position").`as`("position"),
-            match(where("term").`is`(termName).and("batchId").`is`(version)),
+    fun listClassroomsOfTerm(termCode: String, version: String): Optional<List<String>> = ofNullable(courseDataService.query(newAggregation(
+            project("termCode", "batchId").and("lessons.position").`as`("position"),
+            match(where("termCode").`is`(termCode).and("batchId").`is`(version)),
             unwind("position"),
             group().addToSet("position").`as`("position"),
             project("position")
@@ -101,5 +102,12 @@ class TermDataService(private val courseDataService: CourseDataService) {
             group("code"),
             count().`as`("count")
     )).uniqueMappedResult).map { it.getInteger("count") }
+
+    fun listDepartmentsOfTerm(termCode: String, dataVersion: String): Optional<List<String>> = ofNullable(courseDataService.query(newAggregation(
+            project("termCode", "unit", "batchId"),
+            match(where("termCode").`is`(termCode).and("batchId").`is`(dataVersion)),
+            group().addToSet("unit").`as`("departments"),
+            project("departments").andExclude("_id")
+    )).uniqueMappedResult).map { it.get("departments", ArrayList<String>()) }
 
 }

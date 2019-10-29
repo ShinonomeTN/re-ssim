@@ -42,15 +42,33 @@ open class CourseDataService(private val courseRepository: CourseRepository,
         return mongoTemplate.aggregate(aggregation, mongoTemplate.getCollectionName(CourseEntity::class.java), Document::class.java)
     }
 
-    fun queryWeeksOfClassByTerm(term: String, clazz: String): Optional<ArrayList<String>> = ofNullable(query(newAggregation(
+//    fun queryWeeksOfClassByTerm(term: String, clazz: String): Optional<ArrayList<String>> = ofNullable(query(newAggregation(
+//
+//            project("term", "code", "name", "lessons"),
+//
+//            unwind("lessons"),
+//            unwind("lessons.timePoint"),
+//
+//            match(where("term").`is`(term)
+//                    .and("lessons.classAttend").`in`(clazz)),
+//
+//            group().addToSet("lessons.timePoint.week").`as`("weeks"),
+//
+//            project("weeks").andExclude("_id")
+//
+//    )).uniqueMappedResult).map { it.get("weeks", ArrayList<String>()) }
 
-            project("term", "code", "name", "lessons"),
+
+    fun queryWeeksOfClassByTerm(termCode: String, clazz: String, version: String): Optional<ArrayList<String>> = ofNullable(query(newAggregation(
+
+            project("termCode", "code", "name", "lessons", "batchId"),
 
             unwind("lessons"),
             unwind("lessons.timePoint"),
 
-            match(where("term").`is`(term)
-                    .and("lessons.classAttend").`in`(clazz)),
+            match(where("termCode").`is`(termCode)
+                    .and("lessons.classAttend").`in`(clazz)
+                    .and("batchId").`is`(version)),
 
             group().addToSet("lessons.timePoint.week").`as`("weeks"),
 
@@ -58,15 +76,16 @@ open class CourseDataService(private val courseRepository: CourseRepository,
 
     )).uniqueMappedResult).map { it.get("weeks", ArrayList<String>()) }
 
-    fun queryWeeksOfTeacherByTerm(termName: String, teacher: String): Optional<List<Int>> = ofNullable(query(newAggregation(
+    fun queryWeeksOfTeacherByTerm(termCode: String, teacher: String, dataVersion : String): Optional<List<Int>> = ofNullable(query(newAggregation(
 
-            project("term", "code", "name", "lessons"),
+            project("termCode", "code", "name", "lessons", "batchId"),
 
             unwind("lessons"),
             unwind("lessons.timePoint"),
 
-            match(where("term").`is`(termName)
-                    .and("lessons.teacher").`is`(teacher)),
+            match(where("termCode").`is`(termCode)
+                    .and("lessons.teacher").`is`(teacher)
+                    .and("batchId").`is`(dataVersion)),
 
             group().addToSet("lessons.timePoint.week").`as`("weeks"),
 

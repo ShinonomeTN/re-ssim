@@ -1,4 +1,4 @@
-package com.shinonometn.re.ssim.data.kingo.application.api;
+package com.shinonometn.re.ssim.data.kingo.application.api.advisor;
 
 import com.shinonometn.re.ssim.commons.BusinessException;
 import com.shiononometn.commons.web.RexModel;
