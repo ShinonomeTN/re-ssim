@@ -21,7 +21,7 @@
         <spring-cloud.version>Finchley.RELEASE</spring-cloud.version>
     </properties>
 
-    <artifactId>re-ssim-components</artifactId>
+    <artifactId>re-ssim-services</artifactId>
 
     <dependencyManagement>
         <dependencies>

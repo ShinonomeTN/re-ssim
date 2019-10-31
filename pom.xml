@@ -11,7 +11,7 @@
 <!--        <module>re-ssim-caterpillar</module>-->
         <!--<module>re-ssim-service</module>-->
         <!--<module>re-ssim-application</module>-->
-        <module>re-ssim-components</module>
+        <module>re-ssim-services</module>
     </modules>
     <packaging>pom</packaging>
 
