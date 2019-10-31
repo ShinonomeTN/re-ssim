@@ -27,6 +27,12 @@
 
     <repositories>
         <repository>
+            <id>maven-central</id>
+            <name>Maven Central Repository</name>
+            <url>https://repo1.maven.org/maven2/</url>
+        </repository>
+
+        <repository>
             <id>shinonometn-repo</id>
             <name>ShinonomeTN Repository</name>
             <url>https://nexus.shinonometn.com/repository/maven-public/</url>
