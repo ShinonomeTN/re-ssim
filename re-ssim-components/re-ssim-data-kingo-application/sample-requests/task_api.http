@@ -8,3 +8,44 @@ GET http://localhost:8081/task
 Accept: application/json
 
 ###
+
+GET http://localhost:8081/task/2
+Accept: application/json
+
+###
+
+POST http://localhost:8081/task
+Content-Type: application/json
+
+{
+  "termCode" : "20190",
+  "profileId" : 1
+}
+
+###
+
+POST http://localhost:8081/task/2/capturing?start
+Content-Type: application/json
+
+###
+
+POST http://localhost:8081/task/1/capturing?resume
+Content-Type: application/json
+
+###
+
+
+POST http://localhost:8081/task/1/capturing?restart
+Content-Type: application/json
+
+###
+
+GET http://localhost:8081/task/1/bundle
+Content-Type: application/json
+
+###
+
+POST http://localhost:8081/task/1/import?start
+Content-Type: application/json
+
+###

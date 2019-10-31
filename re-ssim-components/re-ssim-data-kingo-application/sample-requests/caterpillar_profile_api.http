@@ -13,3 +13,56 @@ GET http://localhost:8081/profile/3
 Accept: application/json
 
 ###
+
+POST http://localhost:8081/profile
+Content-Type: application/json
+
+{
+  "owner" : "",
+  "name" : "first_profile",
+  "description" : "first_profile",
+  "caterpillarProfile" : {
+    "agentCode": null,
+    "targetDomain": null,
+    "userAgent": null,
+    "timeoutMillis": null,
+    "retryTimes": null,
+    "sleepTimes": null,
+    "taskThreads": null,
+    "username": "",
+    "password": "",
+    "role": "STU",
+    "encoding": "gbk2312"
+  }
+}
+
+###
+
+POST http://localhost:8081/profile
+Content-Type: application/json
+
+{
+  "id" : 1,
+  "owner" : "",
+  "name" : "first_profile",
+  "description" : "first_profile",
+  "caterpillarProfile" : {
+    "agentCode": null,
+    "userAgent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:70.0) Gecko/20100101 Firefox/70.0",
+    "timeoutMillis": 5000,
+    "retryTimes": 99,
+    "sleepTimes": 1000,
+    "taskThreads": 16,
+    "username": "14601120234",
+    "password": "14601120234",
+    "role": "STU",
+    "encoding": "gbk"
+  }
+}
+
+###
+
+GET http://localhost:8081/profile/1?validate
+Accept: application/json
+
+###

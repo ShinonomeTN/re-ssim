@@ -82,6 +82,17 @@ open class TaskApi(private val taskService: TaskService,
         return caterpillarService.start(task.taskInfo!!)
     }
 
+    @PostMapping("/{id}/capturing", params = ["restart"])
+    fun restart(@PathVariable("id") id: Int) {
+        val task = taskService.get(id).orElseThrow { BusinessException("task_not_exists") }
+
+        caterpillarService.getSpiderStatus(id).ifPresent {
+            caterpillarService.removeSpider(id)
+        }
+
+        caterpillarService.start(task.taskInfo!!)
+    }
+
     @GetMapping("/{id}/bundle", produces = [MediaType.APPLICATION_OCTET_STREAM_VALUE])
     fun bundle(@PathVariable("id") id: Int,
                @RequestParam("deleteOld", defaultValue = "false") deleteOld: Boolean): ResponseEntity<FileSystemResource> {

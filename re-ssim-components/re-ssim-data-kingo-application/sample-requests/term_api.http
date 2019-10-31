@@ -9,32 +9,32 @@ Accept: application/json
 
 ###
 
-GET http://localhost:8081/term/20181
+GET http://localhost:8081/term/20190
 Accept: application/json
 
 ###
 
-GET http://localhost:8081/term/20181/course?data_version=1571668181856695816
+GET http://localhost:8081/term/20190/course?data_version=1572488143575589542
 Accept: application/json
 
 ###
 
-GET http://localhost:8081/term/20181/teacher?data_version=1571668181856695816
+GET http://localhost:8081/term/20190/teacher?data_version=1572488143575589542
 Accept: application/json
 
 ###
 
-GET http://localhost:8081/term/20181/class?data_version=1571668181856695816
+GET http://localhost:8081/term/20190/class?data_version=1572488143575589542
 Accept: application/json
 
 ###
 
-GET http://localhost:8081/term/20181/classroom?data_version=1571668181856695816
+GET http://localhost:8081/term/20190/classroom?data_version=1572488143575589542
 Accept: application/json
 
 ###
 
-GET http://localhost:8081/term/20181/department?data_version=1571668181856695816
+GET http://localhost:8081/term/20190/department?data_version=1572488143575589542
 Accept: application/json
 
 ###
