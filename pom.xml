@@ -12,6 +12,7 @@
         <!--<module>re-ssim-service</module>-->
         <!--<module>re-ssim-application</module>-->
         <module>re-ssim-services</module>
+        <module>re-ssim-components</module>
     </modules>
     <packaging>pom</packaging>
 
